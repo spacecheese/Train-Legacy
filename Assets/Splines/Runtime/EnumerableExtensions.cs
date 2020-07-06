@@ -1,0 +1,84 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+
+namespace Splines
+{
+    public static class EnumerableExtensions
+    {
+        public static Vector3 Min(
+            this IEnumerable<Vector3> source)
+        {
+            Vector3 min = new Vector3();
+
+            foreach (var vec in source)
+            {
+                min.x = Mathf.Min(vec.x, min.x);
+                min.y = Mathf.Min(vec.y, min.y);
+                min.z = Mathf.Min(vec.z, min.z);
+            }
+            return min;
+        }
+
+        public static Vector3 Min<TSource>(
+            this IEnumerable<TSource> source, Func<TSource, Vector3> selector)
+        {
+            return source.Select(selector).Min();
+        }
+
+        public static Vector3 Max(
+            this IEnumerable<Vector3> source)
+        {
+            Vector3 max = new Vector3();
+
+            foreach (var vec in source)
+            {
+                max.x = Mathf.Max(vec.x, max.x);
+                max.y = Mathf.Max(vec.y, max.y);
+                max.z = Mathf.Max(vec.z, max.z);
+            }
+            return max;
+        }
+
+        public static Vector3 Max<TSource>(
+            this IEnumerable<TSource> source, Func<TSource, Vector3> selector)
+        {
+            return source.Select(selector).Max();
+        }
+
+        public static Vector3 Average(
+            this IEnumerable<Vector3> source)
+        {
+            return source.Sum() / source.Count();
+        }
+
+        public static Vector3 Average<TSource>(
+            this IEnumerable<TSource> source, Func<TSource, Vector3> selector)
+        {
+            return source.Select(selector).Average();
+        }
+
+        public static Vector3 Sum(
+            this IEnumerable<Vector3> source)
+        {
+            Vector3 sum = new Vector3();
+
+            foreach (var vec in source)
+            {
+                sum.x = vec.x + sum.x;
+                sum.y = vec.y + sum.y;
+                sum.z = vec.z + sum.z;
+            }
+            return sum;
+        }
+
+        public static Vector3 Sum<TSource>(
+            this IEnumerable<TSource> source, Func<TSource, Vector3> selector)
+        {
+            return source.Select(selector).Sum();
+        }
+    }
+}
