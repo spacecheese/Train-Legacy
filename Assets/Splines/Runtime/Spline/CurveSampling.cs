@@ -117,7 +117,8 @@ namespace Splines
         /// </summary>
         private void TesselateSamples()
         {
-            if (TesselationError == 0) return;
+            // Don't attempt to tesselate lines.
+            if (ControlPoints.Count <= 2) return;
 
             for (int i = 1; i < samples.Count; i++)
             {
