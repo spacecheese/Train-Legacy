@@ -1,89 +1,114 @@
-﻿using Splines;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Remoting.Messaging;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Splines
 {
-    public class ObservableList<T> : IObservableList<T>
+    public class ListModifiedEventArgs<T> : EventArgs
     {
-        private readonly IList<T> items = new List<T>();
+        public readonly int Index;
+        public readonly T Item;
 
-        public event EventHandler<ItemAddedEventArgs<T>> ItemAdded;
-        public event EventHandler<ItemRemovedEventArgs<T>> ItemRemoved;
-        public event EventHandler<ItemMovedEventArgs<T>> ItemMoved;
-        public event EventHandler<ClearedEventArgs> Cleared;
-
-        public T this[int index]
+        public ListModifiedEventArgs(int index, T item)
         {
-            get => items[index];
-            set
-            {
-                T item = items[index];
-                items[index] = value;
-                ItemRemoved?.Invoke(this, new ItemRemovedEventArgs<T>(index, item));
-                ItemAdded?.Invoke(this, new ItemAddedEventArgs<T>(index, value));
-            }
+            Index = index;
+            Item = item;
+        }
+    }
+
+    public interface IObservableReadOnlyList<T> : IReadOnlyList<T>
+    {
+        event EventHandler<ListModifiedEventArgs<T>> ItemAdded;
+        event EventHandler<ListModifiedEventArgs<T>> ItemInserted;
+        event EventHandler<ListModifiedEventArgs<T>> ItemRemoved;
+        event EventHandler<ListModifiedEventArgs<T>> ItemReplaced;
+        event EventHandler Cleared;
+
+        int IndexOf(T item);
+    }
+
+    public interface IObservableList<T> : IObservableReadOnlyList<T>, ICollection<T>
+    {
+        void Insert(int index, T item);
+        void RemoveAt(int index);
+
+        new T this[int i] { get; set; }
+    }
+
+    public class ObservableList<T> : IObservableList<T>, IObservableReadOnlyList<T>
+    {
+        private IList<T> list;
+
+        public T this[int i] { 
+            get => list[i];
+            set {
+                list[i] = value;
+                ItemReplaced?.Invoke(this, new ListModifiedEventArgs<T>(i, value));
+            } 
         }
 
-        public int Count => items.Count;
+        public int Count => list.Count;
 
-        public bool IsReadOnly => items.IsReadOnly;
+        public bool IsReadOnly => list.IsReadOnly;
+
+        public event EventHandler<ListModifiedEventArgs<T>> ItemAdded;
+        public event EventHandler<ListModifiedEventArgs<T>> ItemInserted;
+        public event EventHandler<ListModifiedEventArgs<T>> ItemRemoved;
+        public event EventHandler<ListModifiedEventArgs<T>> ItemReplaced;
+        public event EventHandler Cleared;
 
         public void Add(T item)
         {
-            items.Add(item);
-            ItemAdded?.Invoke(this, new ItemAddedEventArgs<T>(Count - 1, item));
+            list.Add(item);
+            ItemAdded?.Invoke(this, new ListModifiedEventArgs<T>(Count - 1, item));
         }
 
-        public void Clear()
-        {
-            items.Clear();
-            Cleared?.Invoke(this, new ClearedEventArgs());
-        }
-
-        public bool Contains(T item) => items.Contains(item);
-
-        public void CopyTo(T[] array, int arrayIndex) =>
-            items.CopyTo(array, arrayIndex);
-
-        public int IndexOf(T item) => items.IndexOf(item);
+        public bool Contains(T item) => list.Contains(item);
+        public void CopyTo(T[] array, int arrayIndex) => list.CopyTo(array, arrayIndex);
+        public int IndexOf(T item) => list.IndexOf(item);
 
         public void Insert(int index, T item)
         {
-            items.Insert(index, item);
-            ItemAdded?.Invoke(this, new ItemAddedEventArgs<T>(index, item));
-
-            for (int i = index + 1; i < items.Count; i++)
-                ItemMoved?.Invoke(this, new ItemMovedEventArgs<T>(i - 1, i, items[i]));
+            list.Insert(index, item);
+            ItemInserted?.Invoke(this, new ListModifiedEventArgs<T>(index, item));
         }
 
         public bool Remove(T item)
         {
-            int index = items.IndexOf(item);
+            int index = IndexOf(item);
+            if (index == -1)
+                return false;
 
-            if (index < 0) return false;
-
-            items.RemoveAt(index);
-            ItemRemoved?.Invoke(this, new ItemRemovedEventArgs<T>(index, item));
-
-            for (int i = index + 1; i < items.Count; i++)
-                ItemMoved?.Invoke(this, new ItemMovedEventArgs<T>(i + 1, i, items[i]));
+            list.RemoveAt(index);
+            ItemRemoved?.Invoke(this, new ListModifiedEventArgs<T>(index, item));
             return true;
         }
 
         public void RemoveAt(int index)
         {
-            T curve = items[index];
-            items.RemoveAt(index);
-            ItemRemoved?.Invoke(this, new ItemRemovedEventArgs<T>(index, curve));
+            T item = list[index];
 
-            for (int i = index + 1; i < items.Count; i++)
-                ItemMoved?.Invoke(this, new ItemMovedEventArgs<T>(i + 1, i, items[i]));
+            list.RemoveAt(index);
+            ItemRemoved?.Invoke(this, new ListModifiedEventArgs<T>(index, item));
         }
 
-        public IEnumerator<T> GetEnumerator() => items.GetEnumerator();
+        public void Clear()
+        {
+            list.Clear();
+            Cleared?.Invoke(this, new EventArgs());
+        }
 
-        IEnumerator IEnumerable.GetEnumerator() => items.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => list.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public ObservableList() => list = new List<T>();
+
+        public ObservableList(IEnumerable<T> collection) => list = new List<T>(collection);
+
+        public ObservableList(int capacity) => list = new List<T>(capacity);
     }
 }
