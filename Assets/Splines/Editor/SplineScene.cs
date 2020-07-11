@@ -30,8 +30,19 @@ namespace Splines
 
         private void SelectNodeHandle(CurveNode node, CurveNode.HandleRelation relation)
         {
-            selectedNode = node;
-            selectedHandleRelation = relation;
+            if (selectedNode == node && selectedHandleRelation == relation)
+            {
+                // Deselect the currently selected node/ handle if it is already selected.
+                selectedNode = null;
+                selectedHandleRelation = CurveNode.HandleRelation.None;
+            }
+            else
+            {
+                // Select the target node/ handle if it isn't already selected.
+                selectedNode = node;
+                selectedHandleRelation = relation;
+            }
+            
             Repaint();
         }
 
