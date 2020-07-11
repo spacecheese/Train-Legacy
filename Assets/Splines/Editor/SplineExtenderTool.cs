@@ -8,8 +8,6 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.EditorTools;
 
-using static Splines.EnumerableExtensions;
-
 namespace Splines
 {
     [EditorTool("Spline Prepend Extender Tool", typeof(Spline))]
@@ -28,12 +26,11 @@ namespace Splines
                 MouseUtils.GetWorldMousePosition(spline), Quaternion.identity, 
                 null, null, CurveNode.HandleConstraintType.Symmetric);
 
-            if (spline.Curves.Count > 0)
-                spline.Curves.Insert(0, new Curve(newNode, spline.Start, spline.Curves.First(), null));
-            else 
-                spline.Curves.Add(new Curve(newNode, null));
-            
-            newNode.Position = MouseUtils.GetWorldMousePosition(spline);
+            if (spline.Nodes.Count == 0)
+                spline.Nodes.Add(newNode);
+            else
+                spline.Nodes.Insert(0, newNode);
+                
             return newNode;
         }
     }
@@ -54,12 +51,8 @@ namespace Splines
                 MouseUtils.GetWorldMousePosition(spline), Quaternion.identity, 
                 null, null, CurveNode.HandleConstraintType.Symmetric);
 
-            if (spline.Curves.Count > 0)
-                spline.Curves.Add(new Curve(newNode, spline.Start, spline.Curves.Last(), null));
-            else
-                spline.Curves.Add(new Curve(newNode, null));
+            spline.Nodes.Add(newNode);
 
-            newNode.Position = MouseUtils.GetWorldMousePosition(spline);
             return newNode;
         }
     }
@@ -110,7 +103,7 @@ namespace Splines
                         lastNewNode.SetHandle(CurveNode.GetOtherRelation(GetDragRelation()), Vector3.zero);
 
                     // Add a new handle at the mouse position.
-                    Vector3 handlePosition = MouseUtils.GetWorldMousePosition(activeSpline);
+                    Vector3 handlePosition = MouseUtils.GetWorldMousePosition(activeSpline) - lastNewNode.Position;
                     lastNewNode.SetHandle(GetDragRelation(), handlePosition);
 
                     Event.current.Use();

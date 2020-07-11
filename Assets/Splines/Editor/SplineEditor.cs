@@ -53,56 +53,34 @@ namespace Splines
                 return;
             }
 
-            Curve firstCurve = spline.Curves.FirstOrDefault((item) => item.End == node);
-            Curve lastCurve = spline.Curves.FirstOrDefault((item) => item.Start == node);
-
-            int firstIndex = spline.Curves.IndexOf(firstCurve);
-
-            if (firstCurve != null)
-                spline.Curves.RemoveAt(firstIndex);
-            if (lastCurve != null)
-                spline.Curves.Remove(lastCurve);
-
-            if (firstCurve == null || lastCurve == null) return;
-
-            Curve newCurve = new Curve(firstCurve.Start, lastCurve.End);
-            spline.Curves.Insert(firstIndex, newCurve);
+            spline.Nodes.Remove(node);
             SceneView.RepaintAll();
         }
 
-        private static void HalveCurve(int index, IList<Curve> curves)
+        private static void HalveCurve(int index, Spline spline)
         {
-            float distance = curves[index].Length / 2;
+            float distance = spline.Curves[index].Length / 2;
             CurveNode middle =
                 new CurveNode(
-                    curves[index].GetPositionAtDistance(distance),
-                    curves[index].GetRotationAtDistance(distance));
+                    spline.Curves[index].GetPositionAtDistance(distance),
+                    spline.Curves[index].GetRotationAtDistance(distance));
 
-            Curve lowHalf = new Curve(curves[index].Start, middle);
-            Curve highHalf = new Curve(middle, curves[index].End);
-
-            curves.Insert(index, highHalf);
-            curves.Insert(index, lowHalf);
-            curves.RemoveAt(index + 2);
-
+            spline.Nodes.Insert(index + 1, middle);
             SceneView.RepaintAll();
         }
 
         private static void AddHandle(Spline spline, CurveNode node, CurveNode.HandleRelation relation)
         {
-            const float HANDLE_SCALE = 2f;
+            const float HANDLE_NORMAL_SCALE = 2f;
 
-            spline.GetTransformAtDistance(spline.GetDistanceOfNode(node),
-                out Vector3 position, out Quaternion rotation);
-
-            Vector3 normal = rotation * Vector3.forward;
+            Vector3 normal = node.Rotation * Vector3.forward;
             normal.Normalize();
 
             Vector3? handlePosition = null;
             if (relation == CurveNode.HandleRelation.Before)
-                handlePosition = position - (normal * HANDLE_SCALE);
+                handlePosition = -(normal * HANDLE_NORMAL_SCALE);
             else if (relation == CurveNode.HandleRelation.After)
-                handlePosition = position + (normal * HANDLE_SCALE);
+                handlePosition = normal * HANDLE_NORMAL_SCALE;
 
             node.SetHandle(relation, handlePosition);
                 
@@ -111,33 +89,7 @@ namespace Splines
 
         private static void BreakSpline(Spline spline, CurveNode startNode)
         {
-            Curve startCurve = spline.Curves.First((item) => startNode == item.Start);
-            int startCurveIndex = spline.Curves.IndexOf(startCurve);
-
-            var newNode = new CurveNode(startNode);
-            startCurve.Start = newNode;
-
-            startNode.AfterHandle = null;
-            newNode.BeforeHandle = null;
-
-            Curve[] curves = new Curve[spline.Curves.Count];
-            spline.Curves.CopyTo(curves, 0);
-
-            // Reorder curves so that the break is between the start and end of Curves.
-            int splineIndex = 0;
-            int localIndex = startCurveIndex;
-            do
-            {
-                // Iterate until the localIndex wraps around to its original value.
-                spline.Curves[splineIndex] = curves[localIndex];
-
-                splineIndex++;
-                // Wrap around when the spline index reached the end of Curves.
-                if ((localIndex + 1) < curves.Length)
-                    localIndex++;
-                else
-                    localIndex = 0;
-            } while (localIndex != startCurveIndex);
+            spline.Break(startNode);
         }
 
         [MenuItem("GameObject/3D Object/Spline")]

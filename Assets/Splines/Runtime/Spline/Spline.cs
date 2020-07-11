@@ -1,35 +1,93 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using UnityEngine;
 
 namespace Splines
 {
     [DisallowMultipleComponent]
+    [ExecuteAlways]
     public partial class Spline : MonoBehaviour
     {
+#if UNITY_EDITOR 
+        public bool HighlightSamples = false;
+#endif
         /// <summary>
-        /// A List of curves within this spline.
+        /// A list of curves within this spline.
         /// </summary>
-        public readonly IObservableList<Curve> Curves = new ObservableList<Curve>();
+        public IObservableReadOnlyList<Curve> Curves => curves;
+        private readonly ObservableList<Curve> curves = 
+            new ObservableList<Curve>();
+
+        /// <summary>
+        /// A list of nodes within this spline.
+        /// </summary>
+        public readonly ObservableList<CurveNode> Nodes =
+            new ObservableList<CurveNode>();
 
         /// <summary>
         /// The total of approximate curve lengths in this spline.
         /// </summary>
         public float Length => Curves.Sum((item) => item.Length);
 
+        [SerializeField]
+        private float tesselationError = .02f;
+        /// <summary>
+        /// The tesselation error set on all curves contained by the spline. <seealso cref="Curve.TesselationError"/>.
+        /// </summary>
+        public float TesselationError {
+            get => tesselationError;
+            set {
+                tesselationError = value;
+
+                foreach (var curve in Curves)
+                    curve.TesselationError = value;
+            }
+        }
+
         /// <summary>
         /// Indicates if the spline is connected at either end.
         /// </summary>
-        public bool IsClosed => Start != null && End != null && Start == End;
+        public bool IsClosed => Start != null && Start == End;
         /// <summary>
         /// The first node in the spline.
         /// </summary>
-        public CurveNode Start => Curves.Count > 0 ? Curves[0].Start : null;
+        public CurveNode Start => Curves.Count > 0 ? Curves.First().Start : null;
         /// <summary>
         /// The last node in the spline.
         /// </summary>
-        public CurveNode End => Curves.Count > 0 ? Curves[Curves.Count - 1].End : null; 
+        public CurveNode End => Curves.Count > 0 ? Curves.Last().End : null;
+
+        /// <summary>
+        /// Closes the spline by connecting the Start and End nodes.
+        /// </summary>
+        public void Close() => curves.Add(new Curve(End, Start, tesselationError));
+
+        /// <summary>
+        /// Breaks the spline open by duplicating the specified node.
+        /// </summary>
+        public void Break(CurveNode node)
+        {
+            // Copy the current sequence of nodes to a new list.
+            List<CurveNode> copiedNodes = new List<CurveNode>(Nodes);
+            Nodes.Clear();
+
+            int nodeIndex = copiedNodes.IndexOf(node);
+
+            // Re add all the nodes after and including the break node.
+            for (int i = nodeIndex; i < copiedNodes.Count; i++)
+                Nodes.Add(copiedNodes[i]);
+
+            // Re add all the nodes before the break node.
+            for (int i = 0; i < nodeIndex; i++)
+                Nodes.Add(copiedNodes[i]);
+
+            // Add a separate copy of the break node.
+            Nodes.Add(new CurveNode(node));
+        }
 
         /// <summary>
         /// Gives the distance of a specified node.
@@ -52,30 +110,37 @@ namespace Splines
         }
 
         /// <summary>
-        /// Gives the curve in which a given distance along the spline with lie.
+        /// Finds the curve containing a distance along the spline.
         /// </summary>
-        public void GetCurveAtDistance(float distance, 
-            out Curve curve, out float innerDistance)
+        /// <param name="distance">
+        /// A distance from the start of the spline to a target point.
+        /// </param>
+        /// <param name="innerDistance">
+        /// The distance from the start of the curve to the specified point.
+        /// </param>
+        public Curve GetCurveAtDistance(float distance, 
+            out float innerDistance)
         {
             if (distance < 0)
                 throw new ArgumentOutOfRangeException("distance");
 
-            int i = 0;
-            float totalDistance = 0;
+            float curveStartDistance, curveEndDistance = 0;
 
-            while ((totalDistance + Curves[i].Length) < distance)
+            var enumerator = Curves.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                totalDistance += Curves[i].Length;
+                curveStartDistance = curveEndDistance;
+                curveEndDistance += enumerator.Current.Length;
 
-                if (Mathf.Approximately(totalDistance, distance)) continue;
-
-                if (++i >= Curves.Count)
-                    throw new ArgumentOutOfRangeException("distance");
+                if (curveEndDistance > distance ||
+                    Mathf.Approximately(distance, curveEndDistance))
+                {
+                    innerDistance = distance - curveStartDistance;
+                    return enumerator.Current;
+                }
             }
 
-            curve = Curves[i];
-            innerDistance = distance - totalDistance;
-            return;
+            throw new ArgumentOutOfRangeException("distance");
         }
 
         /// <summary>
@@ -83,7 +148,7 @@ namespace Splines
         /// </summary>
         public Vector3 GetPositionAtDistance(float distance)
         {
-            GetCurveAtDistance(distance, out Curve curve, out float innerDistance);
+            var curve = GetCurveAtDistance(distance, out float innerDistance);
             return curve.GetPositionAtDistance(innerDistance);
         }
 
@@ -92,7 +157,7 @@ namespace Splines
         /// </summary>
         public Quaternion GetRotationAtDistance(float distance)
         {
-            GetCurveAtDistance(distance, out Curve curve, out float innerDistance);
+            var curve = GetCurveAtDistance(distance, out float innerDistance);
             return curve.GetRotationAtDistance(innerDistance);
         }
 
@@ -101,7 +166,7 @@ namespace Splines
         /// </summary>
         public Vector3 GetNormalAtDistance(float distance)
         {
-            GetCurveAtDistance(distance, out Curve curve, out float innerDistance);
+            var curve = GetCurveAtDistance(distance, out float innerDistance);
             return curve.GetNormalAtDistance(innerDistance);
         }
 
@@ -111,55 +176,63 @@ namespace Splines
         public void GetTransformAtDistance(float distance, 
             out Vector3 position, out Quaternion rotation)
         {
-            GetCurveAtDistance(distance, out Curve curve, out float innerDistance);
+            var curve = GetCurveAtDistance(distance, out float innerDistance);
             curve.GetTransformAtDistance(innerDistance, out position, out rotation);
         }
 
-        /// <summary>
-        /// The sequence of nodes in the spline.
-        /// </summary>
-        public IReadOnlyList<CurveNode> Nodes {
-            get
-            {
-                var nodes = new List<CurveNode>();
-                foreach (var curve in Curves)
-                    if (curve.Start != null)
-                        nodes.Add(curve.Start);
-
-                if (End != null)
-                    nodes.Add(End);
-
-                return nodes;
-            }
-        }
-
-        /// <summary>
-        /// Connect the curves surrounding the specified index to the curve at the specifed index and vice-versa.
-        /// </summary>
-        private void ConnectCurves(int index)
+        private void NodeAdded(object sender, ListModifiedEventArgs<CurveNode> e)
         {
-            if (index > 0)
-            {
-                Curves[index - 1].Next = Curves[index];
-                Curves[index].Previous = Curves[index - 1];
-            }
-            else
-                Curves[index].Previous = null;
-
-            if ((index + 1) < Curves.Count)
-            {
-                Curves[index + 1].Previous = Curves[index];
-                Curves[index].Next = Curves[index + 1];
-            }
-            else
-                Curves[index].Next = null;
+            if (e.Index > 0)
+                // Connect the new node if there are multiple nodes.
+                curves.Add(new Curve(Nodes[e.Index - 1], e.Item, tesselationError));
         }
+
+        private void NodeInserted(object sender, ListModifiedEventArgs<CurveNode> e)
+        {
+            if (e.Index > 0)
+                // Change the end node of the lower curve if this is not the new first node.
+                curves[e.Index - 1].End = e.Item;
+
+            if (e.Index < curves.Count)
+                // Insert a new upper curve if this is not the new last node.
+                curves.Insert(e.Index, new Curve(e.Item, Nodes[e.Index + 1], tesselationError));
+        }
+
+        private void NodeRemoved(object sender, ListModifiedEventArgs<CurveNode> e)
+        {
+            if (e.Index > 0)
+            {
+                // Remove the curve with the removal target as its end.
+                curves.RemoveAt(e.Index - 1);
+
+                // Set the start of the upper curve to the node before the one that was removed.
+                curves[e.Index - 1].Start = Nodes[e.Index - 1];
+            }
+            else
+                // Remove the first curve if the first node is being removed.
+                curves.RemoveAt(0);
+        }
+
+        private void NodeReplaced(object sender, ListModifiedEventArgs<CurveNode> e)
+        {
+            if (e.Index > 0)
+                // Replace the end of the lower curve (if it exists) with the new node.
+                curves[e.Index - 1].End = e.Item;
+
+            if (e.Index < curves.Count)
+                // Replace the start of the upper curve (if it exists) with the new node.
+                curves[e.Index].Start = e.Item;
+        }
+
+        private void NodesCleared(object sender, EventArgs e) => curves.Clear();
 
         public void OnEnable()
         {
-            Curves.ItemAdded += (s, e) => ConnectCurves(e.Index);
-            Curves.ItemMoved += (s, e) => { ConnectCurves(e.NewIndex); ConnectCurves(e.OldIndex); };
-            Curves.ItemRemoved += (s, e) => ConnectCurves(e.Index);
+            Nodes.ItemAdded += NodeAdded;
+            Nodes.ItemInserted += NodeInserted;
+            Nodes.ItemRemoved += NodeRemoved;
+            Nodes.ItemReplaced += NodeReplaced;
+            Nodes.Cleared += NodesCleared;
         }
     }
 }

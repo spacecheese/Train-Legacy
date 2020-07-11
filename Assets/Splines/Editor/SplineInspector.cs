@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEngine;
@@ -34,6 +33,7 @@ namespace Splines
 
             EditorGUILayout.EditorToolbar(new EditorTool[] { CreateInstance<SplinePrependExtenderTool>(), CreateInstance<SplinePostpendExtenderTool>() });
 
+            spline.HighlightSamples = EditorGUILayout.Toggle("Highlight Samples", spline.HighlightSamples);
             if (selectedNode == null)
             {
                 if (spline.Curves.Count == 0)
@@ -58,6 +58,7 @@ namespace Splines
                 selectedHandleRelation == CurveNode.HandleRelation.None ||
                 !selectedNode.GetHandle(selectedHandleRelation).HasValue) return;
 
+            GUILayout.Label("Selected Handle");
             transformFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(transformFoldout, transformFoldoutContent);
             if (transformFoldout)
             {
@@ -92,6 +93,7 @@ namespace Splines
         {
             if (selectedNode == null) return;
 
+            GUILayout.Label("Selected Node");
             var spline = target as Spline;
             transformFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(transformFoldout, transformFoldoutContent);
             if (transformFoldout)
@@ -137,7 +139,7 @@ namespace Splines
 
                 GUI.enabled = selectedNode.AfterHandle == null;
                 if (GUILayout.Button("After", GUILayout.Width(65)))
-                    AddHandle(spline, selectedNode, CurveNode.HandleRelation.Before);
+                    AddHandle(spline, selectedNode, CurveNode.HandleRelation.After);
 
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
@@ -174,7 +176,7 @@ namespace Splines
                 if (GUILayout.Button("Before", GUILayout.Width(65)))
                 {
                     Curve curve = spline.Curves.First((item) => item.End == selectedNode);
-                    HalveCurve(spline.Curves.IndexOf(curve), spline.Curves);
+                    HalveCurve(spline.Curves.IndexOf(curve), spline);
                     SceneView.RepaintAll();
                 }
 
@@ -182,7 +184,7 @@ namespace Splines
                 if (GUILayout.Button("After", GUILayout.Width(65)))
                 {
                     Curve curve = spline.Curves.First((item) => item.Start == selectedNode);
-                    HalveCurve(spline.Curves.IndexOf(curve), spline.Curves);
+                    HalveCurve(spline.Curves.IndexOf(curve), spline);
                     SceneView.RepaintAll();
                 }
                 GUI.enabled = true;
@@ -201,7 +203,7 @@ namespace Splines
                 GUI.enabled = !spline.IsClosed;
                 if (GUILayout.Button("Close Spline", GUILayout.Width(90)))
                 {
-                    spline.Curves.Add(new Curve(spline.End, spline.Start));
+                    spline.Close();
                     SceneView.RepaintAll();
                 }
 

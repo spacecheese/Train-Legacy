@@ -11,6 +11,7 @@ namespace Splines
         private static readonly Color lineColor = Color.green;
         private static readonly Color nodeColor = Color.green;
         private static readonly Color handleColor = Color.blue;
+        private static readonly Color sampleHighlightColor = Color.blue;
 
         private const float nodeSize = .1f;
         private const float handleSize = .05f;
@@ -21,7 +22,7 @@ namespace Splines
             DrawDirectionArrow(spline);
 
             foreach (var curve in spline.Curves)
-                DrawCurve(curve);
+                DrawCurve(curve, spline.HighlightSamples);
 
             foreach (var node in spline.Nodes)
                 DrawTangent(node);
@@ -73,12 +74,12 @@ namespace Splines
             Handles.ConeHandleCap(0, position, rotation, HandleUtility.GetHandleSize(position) * .2f, EventType.Repaint);
         }
 
-        private static void DrawCurve(Curve curve)
+        private static void DrawCurve(Curve curve, bool highlightSamples)
         {
-            Gizmos.color = lineColor;
-
             Vector3 lastSample = default;
             bool isFirstSample = true;
+
+            Gizmos.color = lineColor;
             foreach (var sample in curve.Samples)
             {
                 if (!isFirstSample)
@@ -87,6 +88,11 @@ namespace Splines
                 lastSample = sample;
                 isFirstSample = false;
             }
+
+            Gizmos.color = sampleHighlightColor;
+            if (highlightSamples)
+                foreach (var sample in curve.Samples)
+                    Gizmos.DrawSphere(sample, .05f);
         }
     }
 

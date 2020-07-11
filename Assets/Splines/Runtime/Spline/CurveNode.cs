@@ -43,16 +43,16 @@ namespace Splines
 
         public Vector3? GetHandle(HandleRelation relation)
         {
-            if (relation == HandleRelation.Before) return beforeHandle;
-            else if (relation == HandleRelation.After) return afterHandle;
+            if (relation == HandleRelation.Before) return BeforeHandle;
+            else if (relation == HandleRelation.After) return AfterHandle;
 
             return null;
         }
 
         public void SetHandle(HandleRelation relation, Vector3? newValue)
         {
-            if (relation == HandleRelation.Before) beforeHandle = newValue;
-            else if (relation == HandleRelation.After) afterHandle = newValue;
+            if (relation == HandleRelation.Before) BeforeHandle = newValue;
+            else if (relation == HandleRelation.After) AfterHandle = newValue;
         }
 
         private Vector3 position;

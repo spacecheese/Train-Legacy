@@ -72,29 +72,20 @@ namespace Splines
 
         public void OnAfterDeserialize()
         {
-            if (serializableNodes.Count == 0) return;
-
-            CurveNode start = (CurveNode)serializableNodes[0];
-            CurveNode end;
-
-            if (serializableNodes.Count == 1)
-                Curves.Add(new Curve(start, null));
-
-            // Build curves from all the serializableNodes.
-            for (int i = 1; i < serializableNodes.Count; i++)
+            CurveNode previousNode = null, currentNode;
+            foreach (var node in serializableNodes)
             {
-                if (Curves.Count > 0)
-                    start = Curves[Curves.Count - 1].End;
+                currentNode = (CurveNode)node;
+                
+                Nodes.Add(currentNode);
+                if (previousNode != null)
+                    curves.Add(new Curve(previousNode, currentNode, tesselationError));
 
-                if (serializableIsClosed && 
-                    i == serializableNodes.Count - 1)
-                    // Close the spline if this is the last node and the original spline was closed.
-                    end = Start;
-                else
-                    end = (CurveNode)serializableNodes[i];
-
-                Curves.Add(new Curve(start, end));
+                previousNode = currentNode;
             }
+
+            if (serializableIsClosed)
+                Close();
 
             serializableNodes.Clear();
         }
