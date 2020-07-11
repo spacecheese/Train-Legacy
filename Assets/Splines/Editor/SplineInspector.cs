@@ -33,7 +33,11 @@ namespace Splines
 
             EditorGUILayout.EditorToolbar(new EditorTool[] { CreateInstance<SplinePrependExtenderTool>(), CreateInstance<SplinePostpendExtenderTool>() });
 
+            spline.TesselationError = GUIUtils.LogarithmicSlider("Allowed Tesselation Error", spline.TesselationError, .0001f, 1f);
             spline.HighlightSamples = EditorGUILayout.Toggle("Highlight Samples", spline.HighlightSamples);
+
+            EditorGUILayout.Space();
+
             if (selectedNode == null)
             {
                 if (spline.Curves.Count == 0)
