@@ -14,7 +14,7 @@ namespace Splines
             Vector3 worldPosition = handle.Value + parent.Position;
 
             Handles.color = handleColor;
-            if (Handles.Button(worldPosition, Quaternion.identity,
+            if (Handles.Button(worldPosition, parent.Rotation,
                 HandleUtility.GetHandleSize(worldPosition) * .1f, 
                 HandleUtility.GetHandleSize(worldPosition) * .1f, 
                 Handles.CubeHandleCap))

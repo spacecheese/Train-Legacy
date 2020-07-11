@@ -69,32 +69,29 @@ namespace Splines
             }
         }
 
+        private readonly List<Vector3> evaluationPoints = new List<Vector3>(4);
         /// <summary>
         /// Evaluates the position of the underlying curve function at the specifed time where 0 <= time <= 1.
         /// </summary>
         private CurveSample Evaluate(float time)
         {
-            IReadOnlyList<Vector3> lerpedPoints = ControlPoints;
-            if (lerpedPoints.Count == 0)
-                throw new InvalidOperationException("An empty curve cannot be evaluated.");
+            evaluationPoints.Clear();
+            evaluationPoints.AddRange(ControlPoints);
 
             Vector3 normal = Vector3.zero;
-
-            while (lerpedPoints.Count > 1)
+            while (evaluationPoints.Count > 1)
             {
                 // See https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Higher-order_curves
-                var newPoints = new List<Vector3>(lerpedPoints.Count - 1);
+                if (evaluationPoints.Count == 2)
+                    normal = evaluationPoints[1] - evaluationPoints[0];
 
-                for (int i = 1; i < lerpedPoints.Count; i++)
-                    newPoints.Add(Vector3.Lerp(lerpedPoints[i - 1], lerpedPoints[i], time));
+                for (int i = 1; i < evaluationPoints.Count; i++)
+                    evaluationPoints[i - 1] = Vector3.Lerp(evaluationPoints[i - 1], evaluationPoints[i], time);
 
-                lerpedPoints = newPoints;
-
-                if (lerpedPoints.Count == 2)
-                    normal = lerpedPoints[0] - lerpedPoints[1];
+                evaluationPoints.RemoveAt(evaluationPoints.Count - 1);
             }
 
-            return new CurveSample(time, lerpedPoints[0], normal);
+            return new CurveSample(time, evaluationPoints[0], normal);
         }
 
         /// <summary>
