@@ -72,6 +72,8 @@ namespace Splines
 
         protected CurveNode lastNewNode = null;
 
+        private bool activeDrag = false;
+
         public override void OnToolGUI(EditorWindow window)
         {
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
@@ -90,13 +92,19 @@ namespace Splines
                 lastNewNode = GetNewNode(activeSpline);
                 Event.current.Use();
                 window.Repaint();
+
+                if (Event.current.shift)
+                    activeDrag = true;
             }
-                
+
+            if (Event.current.type == EventType.MouseUp)
+                activeDrag = false;
 
             if (Event.current.type == EventType.MouseDrag)
             {
                 if (activeSpline != null &&
-                    lastNewNode != null)
+                    lastNewNode != null &&
+                    activeDrag)
                 {
                     // Create the other handle if it doesn't already exist.
                     if (!lastNewNode.GetHandle(CurveNode.GetOtherRelation(GetDragRelation())).HasValue)
