@@ -193,7 +193,7 @@ namespace Splines
                 // Change the end node of the lower curve if this is not the new first node.
                 curves[e.Index - 1].End = e.Item;
 
-            if (e.Index < curves.Count)
+            if (e.Index <= curves.Count)
                 // Insert a new upper curve if this is not the new last node.
                 curves.Insert(e.Index, new Curve(e.Item, Nodes[e.Index + 1], tesselationError));
         }
