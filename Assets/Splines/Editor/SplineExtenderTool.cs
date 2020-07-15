@@ -74,17 +74,24 @@ namespace Splines
 
         private bool activeDrag = false;
 
+        private Spline GetActiveSpline()
+        {
+            var go = target as GameObject;
+            if (go == null)
+                return null;
+
+            return go.GetComponent<Spline>();
+        }
+
+        public override bool IsAvailable()
+        {
+            return GetActiveSpline() != null;
+        }
+
         public override void OnToolGUI(EditorWindow window)
         {
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
-
-            var go = target as GameObject;
-            if (go == null)
-                return;
-
-            Spline activeSpline = go.GetComponent<Spline>();
-            if (activeSpline == null)
-                return;
+            var activeSpline = GetActiveSpline();
 
             if (Event.current.type == EventType.MouseDown &&
                 Event.current.button == 0)
