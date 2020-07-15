@@ -13,7 +13,9 @@ namespace Splines
         private CurveNode selectedNode = null;
 
         private readonly Color nodeColor = Color.green;
+        private readonly Color selectedNodeColor = Color.Lerp(Color.white, Color.green, .3f);
         private readonly Color handleColor = Color.blue;
+        private readonly Color selectedHandleColor = Color.Lerp(Color.white, Color.blue, .3f);
 
         private static void DrawTooledHandle(ref Vector3 position, Quaternion rotation)
         {

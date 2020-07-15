@@ -33,7 +33,11 @@ namespace Splines
 
             EditorGUILayout.EditorToolbar(new EditorTool[] { CreateInstance<SplinePrependExtenderTool>(), CreateInstance<SplinePostpendExtenderTool>() });
 
-            spline.TesselationError = GUIUtils.LogarithmicSlider("Allowed Tesselation Error", spline.TesselationError, .0001f, 1f);
+            if (EditorTools.activeToolType == typeof(SplinePrependExtenderTool) ||
+                EditorTools.activeToolType == typeof(SplinePostpendExtenderTool))
+                EditorGUILayout.HelpBox("Hold Shift and drag when placing a node to add control handles and a symmetric constraint", MessageType.Info);
+
+            spline.TesselationError = GUIUtils.LogarithmicSlider("Allowed Tesselation Error", spline.TesselationError, .0001f, .2f);
             spline.HighlightSamples = EditorGUILayout.Toggle("Highlight Samples", spline.HighlightSamples);
 
             EditorGUILayout.Space();
@@ -41,9 +45,9 @@ namespace Splines
             if (selectedNode == null)
             {
                 if (spline.Curves.Count == 0)
-                    EditorGUILayout.HelpBox("Create some nodes to display", MessageType.Info);
+                    EditorGUILayout.HelpBox("Create some nodes to display here", MessageType.Info);
                 else
-                    EditorGUILayout.HelpBox("Select a node to display here", MessageType.Info);
+                    EditorGUILayout.HelpBox("Select a node or handle to display here", MessageType.Info);
                 
                 return;
             }
@@ -176,8 +180,13 @@ namespace Splines
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Insert Node");
 
+                string endNodeInsertTip = "Use the tools at the top to add nodes to the ends of the spline";
+
                 GUI.enabled = selectedNode != spline.Start;
-                if (GUILayout.Button("Before", GUILayout.Width(65)))
+                var insertNodeBeforeContent = new GUIContent("Before");
+                if (!GUI.enabled)
+                    insertNodeBeforeContent.tooltip = endNodeInsertTip;
+                if (GUILayout.Button(insertNodeBeforeContent, GUILayout.Width(65)))
                 {
                     Curve curve = spline.Curves.First((item) => item.End == selectedNode);
                     HalveCurve(spline.Curves.IndexOf(curve), spline);
@@ -185,7 +194,10 @@ namespace Splines
                 }
 
                 GUI.enabled = selectedNode != spline.End;
-                if (GUILayout.Button("After", GUILayout.Width(65)))
+                var insertNodeAfterContent = new GUIContent("After");
+                if (!GUI.enabled)
+                    insertNodeAfterContent.tooltip = endNodeInsertTip;
+                if (GUILayout.Button(insertNodeAfterContent, GUILayout.Width(65)))
                 {
                     Curve curve = spline.Curves.First((item) => item.Start == selectedNode);
                     HalveCurve(spline.Curves.IndexOf(curve), spline);

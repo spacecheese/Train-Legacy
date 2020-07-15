@@ -13,19 +13,22 @@ namespace Splines
 
             Vector3 worldPosition = handle.Value + parent.Position;
 
-            Handles.color = handleColor;
+            if (selectedNode == parent &&
+                selectedHandleRelation == relation)
+            {
+                DrawTooledHandle(ref worldPosition, Quaternion.identity);
+                parent.SetHandle(relation, worldPosition - parent.Position);
+
+                Handles.color = selectedHandleColor;
+            }
+            else
+                Handles.color = handleColor;
+
             if (Handles.Button(worldPosition, parent.Rotation,
                 HandleUtility.GetHandleSize(worldPosition) * .1f, 
                 HandleUtility.GetHandleSize(worldPosition) * .1f, 
                 Handles.CubeHandleCap))
                 SelectNodeHandle(parent, relation);
-
-            if (selectedNode == parent && 
-                selectedHandleRelation == relation)
-            {
-                DrawTooledHandle(ref worldPosition, Quaternion.identity);
-                parent.SetHandle(relation, worldPosition - parent.Position);
-            }
         }
 
         private void SelectNodeHandle(CurveNode node, CurveNode.HandleRelation relation)
@@ -48,7 +51,22 @@ namespace Splines
 
         private void DrawSceneNode(CurveNode node)
         {
-            Handles.color = nodeColor;
+            if (selectedNode == node &&
+                selectedHandleRelation == CurveNode.HandleRelation.None)
+            {
+                Vector3 position = node.Position;
+                Quaternion rotation = node.Rotation;
+
+                DrawTooledHandle(ref position, ref rotation);
+                    
+                if (node.Position != position) node.Position = position;
+                if (node.Rotation != rotation) node.Rotation = rotation;
+
+                Handles.color = selectedNodeColor;
+            }
+            else
+                Handles.color = nodeColor;
+
             if (Handles.Button(node.Position, node.Rotation,
                 HandleUtility.GetHandleSize(node.Position) * .2f, 
                 HandleUtility.GetHandleSize(node.Position) * .2f, 
@@ -58,18 +76,6 @@ namespace Splines
 
             DrawSceneHandle(node, CurveNode.HandleRelation.Before);
             DrawSceneHandle(node, CurveNode.HandleRelation.After);
-
-            if (selectedNode == node)
-            {
-                Vector3 position = node.Position; 
-                Quaternion rotation = node.Rotation;
-                
-                if (selectedHandleRelation == CurveNode.HandleRelation.None)
-                    DrawTooledHandle(ref position, ref rotation);
-
-                if (node.Position != position) node.Position = position;
-                if (node.Rotation != rotation) node.Rotation = rotation;
-            }
         }
 
         private void OnSceneGUI()

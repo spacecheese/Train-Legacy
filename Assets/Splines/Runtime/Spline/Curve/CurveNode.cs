@@ -28,6 +28,9 @@ namespace Splines
             set { afterHandle = value; OnHandleChanged(ref beforeHandle, afterHandle); }
         }
 
+        /// <summary>
+        /// Returns the opposite relation to that provided (ie Before when After is supplied)
+        /// </summary>
         public static HandleRelation GetOtherRelation(HandleRelation relation)
         {
             switch (relation)
@@ -41,18 +44,36 @@ namespace Splines
             }
         }
 
+        /// <summary>
+        /// Gets the handle corresponding to the specified relation.
+        /// </summary>
         public Vector3? GetHandle(HandleRelation relation)
         {
-            if (relation == HandleRelation.Before) return BeforeHandle;
-            else if (relation == HandleRelation.After) return AfterHandle;
-
-            return null;
+            switch (relation)
+            {
+                case HandleRelation.After:
+                    return AfterHandle;
+                case HandleRelation.Before:
+                    return BeforeHandle;
+                default:
+                    return null;
+            }
         }
 
+        /// <summary>
+        /// Sets the handle corresponding to the specified relation.
+        /// </summary>
         public void SetHandle(HandleRelation relation, Vector3? newValue)
         {
-            if (relation == HandleRelation.Before) BeforeHandle = newValue;
-            else if (relation == HandleRelation.After) AfterHandle = newValue;
+            switch (relation)
+            {
+                case HandleRelation.Before:
+                    BeforeHandle = newValue; return;
+                case HandleRelation.After:
+                    AfterHandle = newValue; return;
+                default:
+                    return;
+            };
         }
 
         private Vector3 position;
@@ -83,7 +104,7 @@ namespace Splines
 
         private HandleConstraintType handleConstraint;
         /// <summary>
-        /// Indicates if the handles should be forcibly aligned to each other.
+        /// Indicates how the handles should be constrained to one another.
         /// </summary>
         public HandleConstraintType HandleConstraint {
             get { return handleConstraint; }
@@ -108,19 +129,24 @@ namespace Splines
         }
 
         /// <summary>
-        /// Realign the handles to conform to the curred <see cref="this.HandleConstraint"/>.
+        /// Realign the handles specified to conform to the current <see cref="this.HandleConstraint"/>.
         /// </summary>
+        /// <param name="mover">The handle to move during positioning.</param>
+        /// <param name="target">The handle to keep still during positioning.</param>
         private void PositionHandles(ref Vector3 mover, Vector3 target)
         {
-            if (mover == null || target == null) return;
-            
-            if (HandleConstraint == HandleConstraintType.None) return;
-
-            if (HandleConstraint == HandleConstraintType.Aligned)
-                mover = Vector3.RotateTowards(mover, -target, 4f, 0f);
-
-            if (HandleConstraint == HandleConstraintType.Symmetric)
-                mover = -target;
+            switch (HandleConstraint)
+            {
+                case HandleConstraintType.Aligned:
+                    mover = Vector3.RotateTowards(mover, -target, 4f, 0f);
+                    return;
+                case HandleConstraintType.Symmetric:
+                    mover = -target;
+                    return;
+                case HandleConstraintType.None:
+                default:
+                    return;
+            }
         }
 
         private void OnHandleChanged(ref Vector3? movedHandle, Vector3? otherHandle)
