@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Splines
 {
-    static class GUIUtils
+    static internal class GUIUtils
     {
         public static float LogarithmicSlider(float value, float leftValue, float rightValue, params GUILayoutOption[] options)
         {
