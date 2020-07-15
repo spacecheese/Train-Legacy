@@ -92,7 +92,7 @@ namespace Splines
             Gizmos.color = sampleHighlightColor;
             if (highlightSamples)
                 foreach (var sample in curve.Samples)
-                    Gizmos.DrawSphere(sample, .05f);
+                    Gizmos.DrawSphere(sample, HandleUtility.GetHandleSize(sample) * .02f);
         }
     }
 
