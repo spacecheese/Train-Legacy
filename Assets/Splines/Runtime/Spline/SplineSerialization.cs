@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Splines
 {
@@ -78,6 +79,7 @@ namespace Splines
                 currentNode = (CurveNode)node;
                 
                 Nodes.Add(currentNode);
+                // Node event handlers are not attached until OnEnable so curves need to be manually created.
                 if (previousNode != null)
                     curves.Add(new Curve(previousNode, currentNode, tesselationError));
 
@@ -94,6 +96,8 @@ namespace Splines
         {
             serializableNodes = new List<SerializableCurveNode>(Nodes.Select((item) => (SerializableCurveNode)item));
             serializableIsClosed = IsClosed;
+
+            curves.Clear();
         }
     }
 }

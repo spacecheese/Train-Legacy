@@ -14,8 +14,10 @@ namespace Splines.Deform
     /// <typeparam name="TAttachment">The type to attach to each curve</typeparam>
     [ExecuteAlways]
     [Serializable]
-    public abstract class CurveAttacher<TAttachment>
+    public abstract class CurveAttacher<TAttachment> : MonoBehaviour, ISerializationCallbackReceiver
     {
+        [SerializeField]
+        [HideInInspector]
         private Spline spline = null;
         public Spline Spline {
             get { return spline; }
@@ -29,6 +31,9 @@ namespace Splines.Deform
         /// <summary>
         /// Called when a curve is added or inserted into the tracked spline.
         /// </summary>
+        /// <remarks>
+        /// Since spline curves are not serialized every curve will be added during deserialization.
+        /// </remarks>
         protected abstract TAttachment OnCurveAdded(Curve curve);
         /// <summary>
         /// Called when a curve is modified or replaced in the tracked spline.
@@ -37,9 +42,12 @@ namespace Splines.Deform
         /// <summary>
         /// Called when a curve is removed from the tracked spline.
         /// </summary>
+        /// <remarks>
+        /// Since spline curves are not serialized every curve will be removed during serialization.
+        /// </remarks>
         protected abstract void OnCurveRemoved(TAttachment attachment);
 
-        // Internal handlers for curve related events.
+        // Internal handlers for curve events.
         private void OnSplineCurveAdded(object sender, ListModifiedEventArgs<Curve> e)
         {
             e.Item.CurveChanged += OnSplineCurveChanged;
@@ -75,6 +83,7 @@ namespace Splines.Deform
 
         private void OnSplineCurvesCleared(object sender, EventArgs e)
         {
+            // Also called during spline serialization since spline curves are not serialized and need to be recreated.
             foreach (var attachment in attachments)
                 OnCurveRemoved(attachment);
 
@@ -118,6 +127,17 @@ namespace Splines.Deform
                     attachments.Add(OnCurveAdded(curve));
                 }
             }
+        }
+
+        public void OnBeforeSerialize()
+        {
+            
+        }
+
+        public void OnAfterDeserialize()
+        {
+            // Spline curves are not serialized so any attachments need to be recreated after serialization. 
+            OnSplineChanged(null, spline);
         }
     }
 }

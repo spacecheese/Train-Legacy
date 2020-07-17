@@ -18,6 +18,9 @@ namespace Splines
         /// <summary>
         /// A list of curves within this spline.
         /// </summary>
+        /// <remarks>
+        /// Curves is cleared during serialization and reassembled during deserialization.
+        /// </remarks>
         public IObservableReadOnlyList<Curve> Curves => curves;
         private readonly ObservableList<Curve> curves = 
             new ObservableList<Curve>();
