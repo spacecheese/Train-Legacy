@@ -213,7 +213,7 @@ namespace Splines
                 curves.RemoveAt(0);
         }
 
-        private void NodeReplaced(object sender, ListModifiedEventArgs<CurveNode> e)
+        private void NodeReplaced(object sender, ListItemReplacedEventArgs<CurveNode> e)
         {
             if (e.Index > 0)
                 // Replace the end of the lower curve (if it exists) with the new node.

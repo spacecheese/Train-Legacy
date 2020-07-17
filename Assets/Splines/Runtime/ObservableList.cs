@@ -8,6 +8,20 @@ using System.Threading.Tasks;
 
 namespace Splines
 {
+    public class ListItemReplacedEventArgs<T> : EventArgs
+    {
+        public readonly int Index;
+        public readonly T Item;
+        public readonly T OldItem;
+
+        public ListItemReplacedEventArgs(int index, T item, T oldItem)
+        {
+            Index = index;
+            Item = item;
+            OldItem = oldItem;
+        }
+    }
+
     public class ListModifiedEventArgs<T> : EventArgs
     {
         public readonly int Index;
@@ -25,7 +39,7 @@ namespace Splines
         event EventHandler<ListModifiedEventArgs<T>> ItemAdded;
         event EventHandler<ListModifiedEventArgs<T>> ItemInserted;
         event EventHandler<ListModifiedEventArgs<T>> ItemRemoved;
-        event EventHandler<ListModifiedEventArgs<T>> ItemReplaced;
+        event EventHandler<ListItemReplacedEventArgs<T>> ItemReplaced;
         event EventHandler Cleared;
 
         int IndexOf(T item);
@@ -46,8 +60,9 @@ namespace Splines
         public T this[int i] { 
             get => list[i];
             set {
+                T oldValue = list[i];
                 list[i] = value;
-                ItemReplaced?.Invoke(this, new ListModifiedEventArgs<T>(i, value));
+                ItemReplaced?.Invoke(this, new ListItemReplacedEventArgs<T>(i, value, oldValue));
             } 
         }
 
@@ -58,7 +73,7 @@ namespace Splines
         public event EventHandler<ListModifiedEventArgs<T>> ItemAdded;
         public event EventHandler<ListModifiedEventArgs<T>> ItemInserted;
         public event EventHandler<ListModifiedEventArgs<T>> ItemRemoved;
-        public event EventHandler<ListModifiedEventArgs<T>> ItemReplaced;
+        public event EventHandler<ListItemReplacedEventArgs<T>> ItemReplaced;
         public event EventHandler Cleared;
 
         public void Add(T item)
