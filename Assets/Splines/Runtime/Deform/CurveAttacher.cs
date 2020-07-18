@@ -14,7 +14,7 @@ namespace Splines.Deform
     /// <typeparam name="TAttachment">The type to attach to each curve</typeparam>
     [ExecuteAlways]
     [Serializable]
-    public abstract class CurveAttacher<TAttachment> : MonoBehaviour, ISerializationCallbackReceiver
+    public abstract class CurveAttacher<TAttachment> : MonoBehaviour where TAttachment : class
     {
         [SerializeField]
         [HideInInspector]
@@ -24,8 +24,7 @@ namespace Splines.Deform
             set { Spline oldSpline = spline; spline = value; OnSplineChanged(oldSpline, spline); }
         }
 
-        private readonly List<TAttachment> attachments = null;
-        public IReadOnlyList<TAttachment> Attachments => attachments;
+        private readonly List<TAttachment> attachments = new List<TAttachment>();
 
         // Implementation defined handlers for managing attachments.
         /// <summary>
@@ -38,7 +37,7 @@ namespace Splines.Deform
         /// <summary>
         /// Called when a curve is modified or replaced in the tracked spline.
         /// </summary>
-        protected abstract TAttachment OnCurveChanged(Curve curve, TAttachment attachment);
+        protected abstract void OnCurveChanged(Curve curve, TAttachment attachment); // TODO: Make sure this works.
         /// <summary>
         /// Called when a curve is removed from the tracked spline.
         /// </summary>
@@ -46,6 +45,19 @@ namespace Splines.Deform
         /// Since spline curves are not serialized every curve will be removed during serialization.
         /// </remarks>
         protected abstract void OnCurveRemoved(TAttachment attachment);
+        /// <summary>
+        /// Should be called when a field of the attacher that affects all the attachments is modified. 
+        /// <see cref="OnCurveChanged(Curve, TAttachment)"/> will be fired on all attachments.
+        /// </summary>
+        protected virtual void OnFieldChanged()
+        {
+            if (attachments.Count > 0)
+                for (int i = 0; i < attachments.Count; i++)
+                    OnCurveChanged(Spline.Curves[i], attachments[i]);
+            else
+                foreach (var curve in Spline.Curves)
+                    OnCurveAdded(curve);
+        }
 
         // Internal handlers for curve events.
         private void OnSplineCurveAdded(object sender, ListModifiedEventArgs<Curve> e)
@@ -63,7 +75,7 @@ namespace Splines.Deform
         private void OnSplineCurveReplaced(object sender, ListItemReplacedEventArgs<Curve> e)
         {
             e.OldItem.CurveChanged -= OnSplineCurveChanged;
-            attachments[e.Index] = OnCurveChanged(e.Item, attachments[e.Index]);
+            OnCurveChanged(e.Item, attachments[e.Index]);
             e.Item.CurveChanged += OnSplineCurveChanged;
         }
 
@@ -134,7 +146,7 @@ namespace Splines.Deform
             
         }
 
-        public void OnAfterDeserialize()
+        public void OnEnable()
         {
             // Spline curves are not serialized so any attachments need to be recreated after serialization. 
             OnSplineChanged(null, spline);

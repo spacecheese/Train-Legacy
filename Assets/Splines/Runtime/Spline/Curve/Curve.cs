@@ -39,8 +39,10 @@ namespace Splines
         private void FindBoundingSamples(float distance,
             out CurveSample lower, out CurveSample upper)
         {
-            if (distance < 0 || distance > Length) 
+            if (distance < 0 ||
+                distance > Length && !Mathf.Approximately(distance, Length)) 
                 throw new ArgumentOutOfRangeException("distance");
+
 
             if (!CheckSamples())
                 throw new InvalidOperationException("The curve could not be sampled.");
