@@ -6,6 +6,10 @@ namespace Splines
 {
     public static class Utils
     {
+        /// <summary>
+        /// Excecutes <see cref="UnityEngine.Object.Destroy(GameObject)"/> or <see cref="UnityEngine.Object.DestroyImmediate(GameObject)"/> 
+        /// depending on the current application configuration.
+        /// </summary>
         public static void AutoDestroy(GameObject obj)
         {
 #if UNITY_EDITOR

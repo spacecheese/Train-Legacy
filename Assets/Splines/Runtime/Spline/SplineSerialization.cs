@@ -96,7 +96,10 @@ namespace Splines
         {
             serializableNodes = new List<SerializableCurveNode>(Nodes.Select((item) => (SerializableCurveNode)item));
             serializableIsClosed = IsClosed;
+        }
 
+        public void OnDisable()
+        {
             curves.Clear();
         }
     }
