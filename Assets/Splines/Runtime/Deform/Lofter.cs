@@ -24,7 +24,13 @@ namespace Splines.Deform
 
         private void UpdateCurve(Curve curve, GameObject attachment)
         {
-            Mesh mesh = attachment.GetComponent<MeshFilter>().mesh;
+            if (profile == null)
+                return;
+
+            Mesh mesh = attachment.GetComponent<MeshFilter>().sharedMesh;
+
+            if (mesh == null)
+                mesh = new Mesh();
 
             Vector3[] profileVertices = profile.vertices;
             int[] profileTriangles = profile.triangles;
@@ -79,13 +85,15 @@ namespace Splines.Deform
 
             mesh.vertices = outVertices;
             mesh.triangles = outTriangles;
+            mesh.RecalculateNormals();
+
+            attachment.GetComponent<MeshFilter>().sharedMesh = mesh;
         }
 
         protected override GameObject OnCurveAdded(Curve curve)
         {
-            var attachment = new GameObject();
-            attachment.AddComponent<MeshFilter>();
-            attachment.AddComponent<MeshRenderer>();
+            var attachment = new GameObject("Loft", typeof(MeshFilter), typeof(MeshRenderer));
+            attachment.transform.parent = transform;
 
             updateActions.Enqueue(() => UpdateCurve(curve, attachment));
             return attachment;
