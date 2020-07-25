@@ -7,28 +7,34 @@ using UnityEngine;
 
 namespace Splines
 {
+    /// <summary>
+    /// Structure used to store data about cached curve samples.
+    /// </summary>
+    public struct CurveSample
+    {
+        public float Time;
+        public Vector3 Position;
+        public Vector3 Normal;
+        public float Distance;
+
+        public CurveSample(float time, Vector3 position, Vector3 normal, float distance = default)
+        {
+            Time = time;
+            Distance = distance;
+            Normal = normal;
+            Position = position;
+        }
+
+        public Quaternion GetRotation(Curve parent)
+        {
+            Quaternion rotation = Quaternion.Slerp(parent.Start.Rotation, parent.End.Rotation, Distance / parent.Length);
+            return Quaternion.LookRotation(Normal, rotation * Vector3.up);
+        }
+    }
+
     public partial class Curve
     {
         private bool samplesDirty = true;
-
-        /// <summary>
-        /// Structure used to store data about cached curve samples.
-        /// </summary>
-        private struct CurveSample
-        {
-            public float Time;
-            public Vector3 Position;
-            public Vector3 Normal;
-            public float? Distance;
-
-            public CurveSample(float time, Vector3 position, Vector3 normal, float? distance = null)
-            {
-                Time = time;
-                Distance = distance;
-                Normal = normal;
-                Position = position;
-            }
-        }
 
         private float tesselationError;
         /// <summary>
@@ -59,14 +65,9 @@ namespace Splines
         /// <summary>
         /// Enumerable of samples cached by the curve.
         /// </summary>
-        public IEnumerable<Vector3> Samples
+        public IReadOnlyList<CurveSample> Samples
         {
-            get
-            {
-                if (!CheckSamples()) return new List<Vector3>();
-
-                return samples.Select((sample) => sample.Position);
-            }
+            get { CheckSamples(); return samples.AsReadOnly(); }
         }
 
         private readonly List<Vector3> evaluationPoints = new List<Vector3>(4);

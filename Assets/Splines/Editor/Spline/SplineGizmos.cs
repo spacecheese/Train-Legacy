@@ -76,14 +76,14 @@ namespace Splines
 
         private static void DrawCurve(Curve curve, bool highlightSamples)
         {
-            Vector3 lastSample = default;
+            CurveSample lastSample = default;
             bool isFirstSample = true;
 
             Gizmos.color = lineColor;
             foreach (var sample in curve.Samples)
             {
                 if (!isFirstSample)
-                    Gizmos.DrawLine(lastSample, sample);
+                    Gizmos.DrawLine(lastSample.Position, sample.Position);
 
                 lastSample = sample;
                 isFirstSample = false;
@@ -92,7 +92,7 @@ namespace Splines
             Gizmos.color = sampleHighlightColor;
             if (highlightSamples)
                 foreach (var sample in curve.Samples)
-                    Gizmos.DrawSphere(sample, HandleUtility.GetHandleSize(sample) * .02f);
+                    Gizmos.DrawSphere(sample.Position, HandleUtility.GetHandleSize(sample.Position) * .02f);
         }
     }
 

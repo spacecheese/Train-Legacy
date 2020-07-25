@@ -16,7 +16,7 @@ namespace Splines
             get
             {
                 CheckSamples();
-                return samples[samples.Count - 1].Distance.Value;
+                return samples[samples.Count - 1].Distance;
             }
         }
 
@@ -70,17 +70,17 @@ namespace Splines
         /// </summary>
         private static float GetIntervalTime(CurveSample lower, CurveSample upper, float distance)
         {
-            return (distance - lower.Distance.Value) / (upper.Distance.Value - lower.Distance.Value);
+            return (distance - lower.Distance) / (upper.Distance - lower.Distance);
         }
 
-        private static Vector3 GetPositionFromSamples(CurveSample lower, CurveSample upper, float distance)
+        private static Vector3 GetPositionFromSamples(CurveSample lower, CurveSample upper, float time)
         {
-            return Vector3.Lerp(lower.Position, upper.Position, GetIntervalTime(lower, upper, distance));
+            return Vector3.Lerp(lower.Position, upper.Position, GetIntervalTime(lower, upper, time));
         }
 
-        private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float distance)
+        private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float time)
         {
-            return Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, distance));
+            return Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, time));
         }
 
         private Quaternion GetRotationFromSamples(CurveSample lower, CurveSample upper, float distance)

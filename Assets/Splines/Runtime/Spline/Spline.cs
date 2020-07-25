@@ -220,14 +220,19 @@ namespace Splines
         {
             if (e.Index > 0)
                 // Replace the end of the lower curve (if it exists) with the new node.
-                curves[e.Index - 1].End = e.Item;
+                curves[e.Index - 1].End = e.NewItem;
 
             if (e.Index < curves.Count)
                 // Replace the start of the upper curve (if it exists) with the new node.
-                curves[e.Index].Start = e.Item;
+                curves[e.Index].Start = e.NewItem;
         }
 
         private void NodesCleared(object sender, EventArgs e) => curves.Clear();
+
+        public void OnDestroy()
+        {
+            Nodes.Clear();
+        }
 
         public void OnEnable()
         {

@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Splines
 {
     public class ListItemReplacedEventArgs<T> : EventArgs
     {
         public readonly int Index;
-        public readonly T Item;
+        public readonly T NewItem;
         public readonly T OldItem;
 
-        public ListItemReplacedEventArgs(int index, T item, T oldItem)
+        public ListItemReplacedEventArgs(int index, T newItem, T oldItem)
         {
             Index = index;
-            Item = item;
+            NewItem = newItem;
             OldItem = oldItem;
         }
     }
