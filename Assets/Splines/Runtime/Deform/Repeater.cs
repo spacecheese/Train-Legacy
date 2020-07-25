@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
+using System.Linq;
 using UnityEngine;
 
 namespace Splines.Deform
@@ -25,28 +25,56 @@ namespace Splines.Deform
             set { repeatObject = value; Refresh(); }
         }
 
-        [SerializeField]
-        private bool padEnds = true;
-        public bool PadEnds
+        public enum Justify
         {
-            get => padEnds;
-            set { padEnds = value; Refresh(); }
+            /// <summary>
+            /// No padding.
+            /// </summary>
+            None = 0,
+            /// <summary>
+            /// Padding at the end.
+            /// </summary>
+            Left,
+            /// <summary>
+            /// Padding at the start and end.
+            /// </summary>
+            Center,
+            /// <summary>
+            /// Padding at the start.
+            /// </summary>
+            Right
+        }
+
+        [SerializeField]
+        private Justify padding;
+        /// <summary>
+        /// Determines if and where padding should be inserted when repeating. <seealso cref="Justify"/>
+        /// </summary>
+        public Justify Padding
+        {
+            get => padding;
+            set { padding = value; Refresh(); }
         }
 
         private const int MAX_REPEAT_COUNT = 10000;
         private readonly Queue<Action> updateActions = new Queue<Action>();
 
-        private int GetRepeatCount(Curve curve, bool includePadding = true)
-        {
-            int repeatCount = Mathf.Min(Mathf.RoundToInt(curve.Length / targetRepeatDistance), MAX_REPEAT_COUNT);
+        private int GetIntervalCount(Curve curve) => 
+            Mathf.RoundToInt(curve.Length / targetRepeatDistance);
 
-            if (includePadding && !padEnds)
+        private int GetRepeatCount(Curve curve)
+        {
+            int repeatCount = GetIntervalCount(curve);
+            // Add an extra repeat to the last curve.
+            if (padding == Justify.None &&
+                curve == Spline.Curves.Last())
                 repeatCount++;
+
             return repeatCount;
         }
 
         private float GetRepeatGap(Curve curve) => 
-            curve.Length / GetRepeatCount(curve, false);
+            curve.Length / GetIntervalCount(curve);
 
         private void DestroyRange(List<GameObject> gameObjects, int index, int count)
         {
@@ -68,7 +96,19 @@ namespace Splines.Deform
                 DestroyRange(gameObjects, repeatCount, gameObjects.Count - repeatCount);
 
             float repeatGap = GetRepeatGap(curve);
-            float curvePosition = padEnds ? repeatGap / 2 : 0;
+            float curvePosition;
+
+            switch (padding)
+            {
+                default:
+                case Justify.None:
+                case Justify.Left:
+                    curvePosition = 0; break;
+                case Justify.Right:
+                    curvePosition = repeatGap; break;
+                case Justify.Center:
+                    curvePosition = repeatGap / 2; break;
+            }
 
             for (int i = 0; i < repeatCount; i++)
             {
@@ -107,9 +147,6 @@ namespace Splines.Deform
 
         protected override void OnCurveRemoved(List<GameObject> attachment)
         {
-            if (attachment == null)
-                return;
-
             foreach (var go in attachment)
                 Utils.AutoDestroy(go);
         }

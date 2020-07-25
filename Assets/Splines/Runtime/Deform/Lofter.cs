@@ -1,10 +1,6 @@
-﻿using Splines;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using Unity.Jobs;
 using UnityEngine;
-using UnityEngine.Rendering.HighDefinition;
 
 namespace Splines.Deform
 {
