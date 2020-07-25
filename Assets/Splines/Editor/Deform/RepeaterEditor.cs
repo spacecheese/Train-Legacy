@@ -11,7 +11,10 @@ namespace Splines.Deform
             var repeat = target as Repeater;
 
             if (GUILayout.Button("Refresh"))
+            {
                 repeat.Refresh();
+                SceneView.RepaintAll();
+            }
 
             EditorGUI.BeginChangeCheck();
             Spline spline = EditorGUILayout.ObjectField("Target Spline", repeat.Spline, typeof(Spline), true) as Spline;
@@ -38,10 +41,10 @@ namespace Splines.Deform
             }
 
             EditorGUI.BeginChangeCheck();
-            bool padEnds = EditorGUILayout.Toggle("Pad Ends", repeat.PadEnds);
+            Repeater.Justify padding = (Repeater.Justify)EditorGUILayout.EnumPopup("Padding", repeat.Padding);
             if (EditorGUI.EndChangeCheck())
             {
-                repeat.PadEnds = padEnds;
+                repeat.Padding = padding;
                 SceneView.RepaintAll();
             }
         }

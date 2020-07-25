@@ -11,14 +11,17 @@ namespace Splines.Deform
             var loft = target as Lofter;
 
             if (GUILayout.Button("Refresh"))
+            {
                 loft.Refresh();
+                SceneView.RepaintAll();
+            }
 
             EditorGUI.BeginChangeCheck();
             Spline spline = EditorGUILayout.ObjectField("Target Spline", loft.Spline, typeof(Spline), true) as Spline;
             if (EditorGUI.EndChangeCheck())
             {
                 loft.Spline = spline;
-                SceneView.RepaintAll();
+                
             }
 
             EditorGUI.BeginChangeCheck();
