@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 
 namespace Splines.Deform
@@ -12,25 +10,47 @@ namespace Splines.Deform
         {
             var repeat = target as Repeater;
 
+            if (GUILayout.Button("Refresh"))
+                repeat.Refresh();
+
             EditorGUI.BeginChangeCheck();
             Spline spline = EditorGUILayout.ObjectField("Target Spline", repeat.Spline, typeof(Spline), true) as Spline;
             if (EditorGUI.EndChangeCheck())
+            {
                 repeat.Spline = spline;
+                SceneView.RepaintAll();
+            }
 
             EditorGUI.BeginChangeCheck();
-            GameObject repeatObject = EditorGUILayout.ObjectField("Repeat Object", repeat.RepeatObject, typeof(GameObject), true) as GameObject;
+            GameObject repeatObject = EditorGUILayout.ObjectField("Repeat Object", repeat.RepeatObject, typeof(GameObject), false) as GameObject;
             if (EditorGUI.EndChangeCheck())
+            {
                 repeat.RepeatObject = repeatObject;
+                SceneView.RepaintAll();
+            }
 
             EditorGUI.BeginChangeCheck();
-            float repeatDistance = EditorGUILayout.FloatField("Target Repeat Distance", repeat.TargetRepeatDistance);
+            float repeatDistance = EditorGUILayout.DelayedFloatField("Target Repeat Distance", repeat.TargetRepeatDistance);
             if (EditorGUI.EndChangeCheck())
+            {
                 repeat.TargetRepeatDistance = repeatDistance;
+                SceneView.RepaintAll();
+            }
 
             EditorGUI.BeginChangeCheck();
             bool padEnds = EditorGUILayout.Toggle("Pad Ends", repeat.PadEnds);
             if (EditorGUI.EndChangeCheck())
+            {
                 repeat.PadEnds = padEnds;
+                SceneView.RepaintAll();
+            }
+        }
+
+        [MenuItem("GameObject/3D Object/Splines/Repeater")]
+        public static void CreateEmptySpline()
+        {
+            var repeater = new GameObject("Repeater", typeof(Repeater));
+            Selection.activeObject = repeater;
         }
     }
 }

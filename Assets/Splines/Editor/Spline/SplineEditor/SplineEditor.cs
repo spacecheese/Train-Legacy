@@ -94,7 +94,7 @@ namespace Splines
             spline.Break(startNode);
         }
 
-        [MenuItem("GameObject/3D Object/Spline")]
+        [MenuItem("GameObject/3D Object/Splines/Spline")]
         public static void CreateEmptySpline()
         {
             var spline = new GameObject("Spline", typeof(Spline));

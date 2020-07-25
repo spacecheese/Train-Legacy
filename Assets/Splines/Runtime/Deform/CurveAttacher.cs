@@ -1,8 +1,5 @@
-﻿using Splines;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using Unity.Jobs;
 using UnityEngine;
 
 namespace Splines.Deform
@@ -24,15 +21,13 @@ namespace Splines.Deform
             set { Spline oldSpline = spline; spline = value; OnSplineChanged(oldSpline, spline); }
         }
 
+        public IReadOnlyList<TAttachment> Attachments => attachments;
         private readonly List<TAttachment> attachments = new List<TAttachment>();
 
         // Implementation defined handlers for managing attachments.
         /// <summary>
         /// Called when a curve is added or inserted into the tracked spline.
         /// </summary>
-        /// <remarks>
-        /// Since spline curves are not serialized every curve will be added during deserialization.
-        /// </remarks>
         protected abstract TAttachment OnCurveAdded(Curve curve);
         /// <summary>
         /// Called when a curve is modified or replaced in the tracked spline.
@@ -41,23 +36,7 @@ namespace Splines.Deform
         /// <summary>
         /// Called when a curve is removed from the tracked spline.
         /// </summary>
-        /// <remarks>
-        /// Since spline curves are not serialized every curve will be removed during serialization.
-        /// </remarks>
         protected abstract void OnCurveRemoved(TAttachment attachment);
-        /// <summary>
-        /// Should be called when a field of the attacher that affects all the attachments is modified. 
-        /// <see cref="OnCurveChanged(Curve, TAttachment)"/> will be fired on all attachments.
-        /// </summary>
-        protected virtual void OnFieldChanged()
-        {
-            if (attachments.Count > 0)
-                for (int i = 0; i < attachments.Count; i++)
-                    OnCurveChanged(Spline.Curves[i], attachments[i]);
-            else
-                foreach (var curve in Spline.Curves)
-                    OnCurveAdded(curve);
-        }
 
         // Internal handlers for curve events.
         private void OnSplineCurveAdded(object sender, ListModifiedEventArgs<Curve> e)
@@ -75,15 +54,8 @@ namespace Splines.Deform
         private void OnSplineCurveReplaced(object sender, ListItemReplacedEventArgs<Curve> e)
         {
             e.OldItem.CurveChanged -= OnSplineCurveChanged;
-            OnCurveChanged(e.Item, attachments[e.Index]);
-            e.Item.CurveChanged += OnSplineCurveChanged;
-        }
-
-        private void OnSplineCurveChanged(object sender, EventArgs e)
-        {
-            Curve curve = (Curve)sender;
-            int index = spline.Curves.IndexOf(curve);
-            OnCurveChanged(curve, attachments[index]);
+            OnCurveChanged(e.NewItem, attachments[e.Index]);
+            e.NewItem.CurveChanged += OnSplineCurveChanged;
         }
 
         private void OnSplineCurveRemoved(object sender, ListModifiedEventArgs<Curve> e)
@@ -93,9 +65,15 @@ namespace Splines.Deform
             attachments.RemoveAt(e.Index);
         }
 
-        private void OnSplineCurvesCleared(object sender, EventArgs e)
+        private void OnSplineCurveChanged(object sender, EventArgs e)
         {
-            // Also called during spline serialization since spline curves are not serialized and need to be recreated.
+            Curve curve = (Curve)sender;
+            int index = spline.Curves.IndexOf(curve);
+            OnCurveChanged(curve, attachments[index]);
+        }
+
+        private void OnSplineCleared(object sender, EventArgs e)
+        {
             foreach (var attachment in attachments)
                 OnCurveRemoved(attachment);
 
@@ -112,18 +90,16 @@ namespace Splines.Deform
                 oldValue.Curves.ItemInserted -= OnSplineCurveInserted;
                 oldValue.Curves.ItemReplaced -= OnSplineCurveReplaced;
                 oldValue.Curves.ItemRemoved -= OnSplineCurveRemoved;
-                oldValue.Curves.Cleared -= OnSplineCurvesCleared;
+                oldValue.Curves.Cleared -= OnSplineCleared;
 
-                int i = 0;
-                foreach (var curve in oldValue.Curves)
+                for (int i = 0; i < oldValue.Curves.Count; i++)
                 {
-                    curve.CurveChanged -= OnSplineCurveChanged;
-                    OnCurveRemoved(attachments[i++]);
+                    oldValue.Curves[i].CurveChanged -= OnSplineCurveChanged;
+                    OnCurveRemoved(attachments[i]);
                 }
                     
                 attachments.Clear();
             }
-            
 
             if (newValue != null)
             {
@@ -131,7 +107,7 @@ namespace Splines.Deform
                 newValue.Curves.ItemInserted += OnSplineCurveInserted;
                 newValue.Curves.ItemReplaced += OnSplineCurveReplaced;
                 newValue.Curves.ItemRemoved += OnSplineCurveRemoved;
-                newValue.Curves.Cleared += OnSplineCurvesCleared;
+                newValue.Curves.Cleared += OnSplineCleared;
 
                 foreach (var curve in newValue.Curves)
                 {
@@ -141,15 +117,25 @@ namespace Splines.Deform
             }
         }
 
-        public void OnBeforeSerialize()
+        public void Refresh()
         {
-            
+            if (spline == null)
+                return;
+
+            for (int i = 0; i < spline.Curves.Count; i++)
+                OnCurveChanged(spline.Curves[i], attachments[i]);
         }
 
         public void OnEnable()
         {
-            // Spline curves are not serialized so any attachments need to be recreated after serialization. 
             OnSplineChanged(null, spline);
+        }
+
+        private void Update()
+        {
+            if (transform.hasChanged)
+                if (transform.parent.gameObject.TryGetComponent(out Spline spline))
+                    Spline = spline;
         }
     }
 }
