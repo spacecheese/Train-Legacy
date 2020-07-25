@@ -20,18 +20,12 @@ namespace Splines
 
         protected override CurveNode.HandleRelation GetDragRelation() => CurveNode.HandleRelation.Before;
 
-        protected override CurveNode GetNewNode(Spline spline)
+        protected override void AttachNode(Spline spline, CurveNode node)
         {
-            CurveNode newNode = new CurveNode(
-                MouseUtils.GetWorldMousePosition(spline), Quaternion.identity, 
-                null, null, CurveNode.HandleConstraintType.Symmetric);
-
             if (spline.Nodes.Count == 0)
-                spline.Nodes.Add(newNode);
+                spline.Nodes.Add(node);
             else
-                spline.Nodes.Insert(0, newNode);
-                
-            return newNode;
+                spline.Nodes.Insert(0, node);
         }
     }
 
@@ -45,25 +39,18 @@ namespace Splines
 
         protected override CurveNode.HandleRelation GetDragRelation() => CurveNode.HandleRelation.After;
 
-        protected override CurveNode GetNewNode(Spline spline)
+        protected override void AttachNode(Spline spline, CurveNode node)
         {
-            CurveNode newNode = new CurveNode(
-                MouseUtils.GetWorldMousePosition(spline), Quaternion.identity, 
-                null, null, CurveNode.HandleConstraintType.Symmetric);
-
-            spline.Nodes.Add(newNode);
-
-            return newNode;
+            spline.Nodes.Add(node);
         }
     }
-
     
     abstract class SplineExtenderTool : EditorTool
     {
         /// <summary>
         /// Gets a new node attached to any relevant existing nodes. The position of this node will be overwritten.
         /// </summary>
-        protected abstract CurveNode GetNewNode(Spline spline);
+        protected abstract void AttachNode(Spline spline, CurveNode node);
 
         /// <summary>
         /// Gets the handle relation to be used when dragging to create handles.
@@ -71,7 +58,6 @@ namespace Splines
         protected abstract CurveNode.HandleRelation GetDragRelation();
 
         protected CurveNode lastNewNode = null;
-
         private bool activeDrag = false;
 
         private Spline GetActiveSpline()
@@ -96,7 +82,11 @@ namespace Splines
             if (Event.current.type == EventType.MouseDown &&
                 Event.current.button == 0)
             {
-                lastNewNode = GetNewNode(activeSpline);
+                MouseUtils.GetWorldMousePosition(activeSpline, out Vector3 position, out Vector3 normal);
+                lastNewNode = new CurveNode(position, Quaternion.AngleAxis(0, normal),
+                    null, null, CurveNode.HandleConstraintType.Symmetric);
+                AttachNode(activeSpline, lastNewNode);
+
                 Event.current.Use();
                 window.Repaint();
 
@@ -116,9 +106,10 @@ namespace Splines
                     // Create the other handle if it doesn't already exist.
                     if (!lastNewNode.GetHandle(CurveNode.GetOtherRelation(GetDragRelation())).HasValue)
                         lastNewNode.SetHandle(CurveNode.GetOtherRelation(GetDragRelation()), Vector3.zero);
-
+                    
+                    MouseUtils.GetWorldMousePosition(activeSpline, out Vector3 position, out _);
                     // Add a new handle at the mouse position.
-                    Vector3 handlePosition = MouseUtils.GetWorldMousePosition(activeSpline) - lastNewNode.Position;
+                    Vector3? handlePosition = position - lastNewNode.Position;
                     lastNewNode.SetHandle(GetDragRelation(), handlePosition);
 
                     Event.current.Use();

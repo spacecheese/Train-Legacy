@@ -19,7 +19,19 @@ namespace Splines
         /// <summary>
         /// Searches for a raycast hit with the provided ray or gives the point at the provided noHitDepth if no hit is detected.
         /// </summary>
-        public static Vector3 GetRayPosition(Ray ray, float noHitDepth) => Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(noHitDepth);
+        public static void GetRayPointOrHit(Ray ray, float noHitDepth, out Vector3 position, out Vector3 normal)
+        {
+            if (Physics.Raycast(ray, out RaycastHit hit))
+            {
+                position = hit.point;
+                normal = hit.normal;
+            }
+            else
+            {
+                position = ray.GetPoint(noHitDepth);
+                normal = Vector3.up;
+            }
+        }
 
         /// <summary>
         /// Gets the average depth of a spline along a ray or the provided defaultDepth if the spline has no nodes.
@@ -36,13 +48,14 @@ namespace Splines
         }
 
         /// <summary>
-        /// Gets the current mouse position in the world using the average spline position, the depth of the first raycast hit or the defaultDepth as a distance along 
-        /// the mouse ray (See <see cref="GetRayPosition(Ray, float)>"/>.
+        /// Gets the current mouse position in the world using the average spline position, the depth of the first raycast hit or 
+        /// the defaultDepth as a distance along the mouse ray (See <see cref="GetRayPosition(Ray, float)>"/>.
         /// </summary>
-        public static Vector3 GetWorldMousePosition(Spline spline, float defaultDepth = 10f)
+        public static void GetWorldMousePosition(Spline spline, out Vector3 position, out Vector3 normal, 
+            float defaultDepth = 10f)
         {
             Ray ray = GetMouseRay();
-            return GetRayPosition(ray, GetAverageDepth(spline, ray, defaultDepth));
+            GetRayPointOrHit(ray, GetAverageDepth(spline, ray, defaultDepth), out position, out normal);
         }
     }
 }
