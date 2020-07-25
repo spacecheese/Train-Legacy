@@ -30,7 +30,12 @@ namespace Splines.Deform
             Mesh mesh = attachment.GetComponent<MeshFilter>().sharedMesh;
 
             if (mesh == null)
+            {
                 mesh = new Mesh();
+                attachment.GetComponent<MeshFilter>().sharedMesh = mesh;
+            }
+            else
+                mesh.Clear();
 
             Vector3[] profileVertices = profile.vertices;
             int[] profileTriangles = profile.triangles;
@@ -49,45 +54,45 @@ namespace Splines.Deform
                 int startVertI = sampleI * profileVertices.Length;
                 for (int vertI = 0; vertI < profileVertices.Length; vertI++)
                     // Add each of the profile vertices to the out vertices offset by the sample position and rotation.
-                    outVertices[startVertI + vertI] = samples[sampleI].GetRotation(curve) * (profileVertices[vertI] + samples[sampleI].Position);
+                    outVertices[startVertI + vertI] = samples[sampleI].GetRotation(curve) * profileVertices[vertI] + samples[sampleI].Position;
             }
 
             // Add the start cap.
-            profileTriangles.CopyTo(outTriangles, 0);
-            for (int sampleI = 0; sampleI < samples.Count - 1; sampleI++)
+            for (int i = 0; i < profileTriangles.Length; i++)
+                // Reverse the winding order on the start cap.
+                outTriangles[i] = profileTriangles[profileTriangles.Length - 1 - i];
+
+            for (int loopI = 0; loopI < samples.Count - 1; loopI++)
             {
-                int startTriangleI = sampleI * profileVertices.Length * 2 + (profileTriangles.Length / 3);
-                for (int triangleI = 0; triangleI < profileVertices.Length - 1; triangleI++)
+                int startVertexI = loopI * profileVertices.Length * 6 + profileTriangles.Length;
+                for (int vertexI = 0; vertexI < profileVertices.Length; vertexI++)
                 {
-                    int i = (triangleI + startTriangleI) * 3;
+                    int i = vertexI * 6 + startVertexI;
+
+                    // Wrap around to 0 on the last vertex.
+                    int nextVertexI = vertexI < profileVertices.Length - 1 ? vertexI + 1 : 0;
 
                     // Add a triangle pointing to the end.
-                    outTriangles[i + 0] = sampleI * profileVertices.Length + triangleI;
-                    outTriangles[i + 1] = sampleI * profileVertices.Length + triangleI + 1;
-                    outTriangles[i + 2] = (sampleI + 1) * profileVertices.Length + triangleI;
+                    outTriangles[i + 0] = loopI * profileVertices.Length + vertexI;
+                    outTriangles[i + 1] = loopI * profileVertices.Length + nextVertexI;
+                    outTriangles[i + 2] = (loopI + 1) * profileVertices.Length + vertexI;
 
                     // Add a triangle pointing to the start.
-                    outTriangles[i + 3] = (sampleI + 1) * profileVertices.Length + triangleI;
-                    outTriangles[i + 4] = (sampleI + 1) * profileVertices.Length + triangleI + 1;
-                    outTriangles[i + 5] = sampleI * profileVertices.Length + triangleI + 1;
+                    outTriangles[i + 3] = loopI * profileVertices.Length + nextVertexI;
+                    outTriangles[i + 4] = (loopI + 1) * profileVertices.Length + nextVertexI;
+                    outTriangles[i + 5] = (loopI + 1) * profileVertices.Length + vertexI;
                 }
             }
 
             int endCapVertexStartIndex = neededVertexCount - profileVertices.Length;
-            int endCapTriangleStartIndex = neededTriangleCount - profileTriangles.Length;
+            int endCapTriangleStartIndex = neededTriangleCount * 3 - profileTriangles.Length;
             // Add the end cap.
             for (int i = 0; i < profileTriangles.Length; i++)
-            {
                 outTriangles[endCapTriangleStartIndex + i] = profileTriangles[i] + endCapVertexStartIndex;
-            }
-
-            mesh.Clear();
 
             mesh.vertices = outVertices;
             mesh.triangles = outTriangles;
             mesh.RecalculateNormals();
-
-            attachment.GetComponent<MeshFilter>().sharedMesh = mesh;
         }
 
         protected override GameObject OnCurveAdded(Curve curve)
