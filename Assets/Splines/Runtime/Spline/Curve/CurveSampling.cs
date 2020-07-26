@@ -165,8 +165,7 @@ namespace Splines
         /// <summary>
         /// Check if samples requires population or repopulation.
         /// </summary>
-        /// <returns>True if samples is populated. False otherwise.</returns>
-        private bool CheckSamples()
+        private void CheckSamples()
         {
             if (samplesDirty)
             {
@@ -176,17 +175,10 @@ namespace Splines
                 PopulateControlPoints();
                 PopulateSamples();
 
-                if (samples.Count != 0)
-                {
-                    // Only tesselate and calculate distances if the curve was sampled.
-                    TesselateSamples();
-                    CalculateDistances();
-                }
-
-                return samples.Count != 0;
+                // Only tesselate and calculate distances if the curve was sampled.
+                TesselateSamples();
+                CalculateDistances();
             }
-
-            return true;
         }
     }
 }

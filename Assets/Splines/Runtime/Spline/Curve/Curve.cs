@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Splines.Runtime;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,62 +33,54 @@ namespace Splines
         }
 
         /// <summary>
-        /// Finds the samples immediatly above and below the specified distance (or on
-        /// and above if distance lies at a sample). If only one sample exists then 
-        /// same sample will be returned twice.
+        /// Performs a binary search to find the index of the sample at the specified distance or 
+        /// the binary complement of the index of the sample above the specified distance.
         /// </summary>
-        private void FindBoundingSamples(float distance,
-            out CurveSample lower, out CurveSample upper)
+        /// <seealso cref="IListExtensions.BinarySearch{TItem, TSearch}(IList{TItem}, TSearch, Func{TSearch, TItem, int})"/>
+        private int FindSampleIndex(float distance)
         {
             if (distance < 0 ||
                 distance > Length && !Mathf.Approximately(distance, Length)) 
                 throw new ArgumentOutOfRangeException("distance");
 
-
-            if (!CheckSamples())
-                throw new InvalidOperationException("The curve could not be sampled.");
-
-            if (samples.Count == 1)
+            int comparer(float a, CurveSample b)
             {
-                lower = samples[0]; upper = samples[0];
-                return;
+                if (Mathf.Approximately(a, b.Distance))
+                    return 0;
+                else if (a > b.Distance)
+                    return 1;
+                else
+                    return -1;
             }
-
-            for (int i = 1; i < samples.Count; i++)
-            {
-                if (samples[i].Distance >= distance)
-                {
-                    lower = samples[i - 1]; upper = samples[i];
-                    return;
-                }
-            }
-
-            throw new ArgumentOutOfRangeException("distance");
+            return samples.BinarySearch(distance, comparer);
         }
 
         /// <summary>
         /// Calculates the t (0 <= t <= 1) of a distance given two bounding samples.
         /// </summary>
-        private static float GetIntervalTime(CurveSample lower, CurveSample upper, float distance)
-        {
-            return (distance - lower.Distance) / (upper.Distance - lower.Distance);
-        }
+        private static float GetIntervalTime(CurveSample lower, CurveSample upper, float distance) =>
+            (distance - lower.Distance) / (upper.Distance - lower.Distance);
 
-        private static Vector3 GetPositionFromSamples(CurveSample lower, CurveSample upper, float time)
-        {
-            return Vector3.Lerp(lower.Position, upper.Position, GetIntervalTime(lower, upper, time));
-        }
+        private static Vector3 GetPositionFromSamples(CurveSample lower, CurveSample upper, float distance) =>
+            Vector3.Lerp(lower.Position, upper.Position, GetIntervalTime(lower, upper, distance));
 
-        private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float time)
-        {
-            return Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, time));
-        }
+        private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float distance) =>
+            Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, distance));
 
-        private Quaternion GetRotationFromSamples(CurveSample lower, CurveSample upper, float distance)
+        private void GetPositionNormalAtDistance(float distance,
+            out Vector3 position, out Vector3 normal)
         {
-            Vector3 normal = GetNormalFromSamples(lower, upper, distance);
-            Quaternion rotation = Quaternion.Slerp(Start.Rotation, End.Rotation, distance / Length);
-            return Quaternion.LookRotation(normal, rotation * Vector3.up);
+            int sampleIndex = FindSampleIndex(distance);
+            if (sampleIndex < 0)
+            {
+                position = GetPositionFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
+                normal = GetNormalFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
+            }
+            else
+            {
+                position = samples[sampleIndex].Position;
+                normal = samples[sampleIndex].Normal;
+            }
         }
 
         /// <summary>
@@ -95,8 +88,8 @@ namespace Splines
         /// </summary>
         public Vector3 GetPositionAtDistance(float distance)
         {
-            FindBoundingSamples(distance, out CurveSample lower, out CurveSample upper);
-            return GetPositionFromSamples(lower, upper, distance);
+            GetPositionNormalAtDistance(distance, out Vector3 position, out Vector3 _);
+            return position;
         }
 
         /// <summary>
@@ -104,8 +97,8 @@ namespace Splines
         /// </summary>
         public Vector3 GetNormalAtDistance(float distance)
         {
-            FindBoundingSamples(distance, out CurveSample lower, out CurveSample upper);
-            return GetNormalFromSamples(lower, upper, distance);
+            GetPositionNormalAtDistance(distance, out Vector3 _, out Vector3 normal);
+            return normal;
         }
 
         /// <summary>
@@ -113,8 +106,8 @@ namespace Splines
         /// </summary>
         public Quaternion GetRotationAtDistance(float distance)
         {
-            FindBoundingSamples(distance, out CurveSample lower, out CurveSample upper);
-            return GetRotationFromSamples(lower, upper, distance);
+            GetTransformAtDistance(distance, out Vector3 _, out Quaternion rotation);
+            return rotation;
         }
 
         /// <summary>
@@ -123,10 +116,10 @@ namespace Splines
         public void GetTransformAtDistance(float distance,
             out Vector3 position, out Quaternion rotation)
         {
-            FindBoundingSamples(distance, out CurveSample lower, out CurveSample upper);
+            Quaternion nodeRotation = Quaternion.Slerp(Start.Rotation, End.Rotation, distance / Length);
+            GetPositionNormalAtDistance(distance, out position, out Vector3 normal);
 
-            position = GetPositionFromSamples(lower, upper, distance);
-            rotation = GetRotationFromSamples(lower, upper, distance);
+            rotation = Quaternion.LookRotation(normal, nodeRotation * Vector3.up);
         }
 
         public Curve(CurveNode start, CurveNode end, float tesselationError)
