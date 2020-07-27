@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.Splines.Runtime
+namespace Splines
 {
-    static class IListExtensions
+    static class IReadOnlyListExtensions
     {
         #region From https://stackoverflow.com/a/2948872
         /// <summary>
@@ -18,8 +18,7 @@ namespace Assets.Splines.Runtime
         /// <param name="value">The value to search for.</param>
         /// <param name="comparer">The comparer that is used to compare the value
         /// with the list items.</param>
-        /// <returns></returns>
-        public static int BinarySearch<TItem, TSearch>(this IList<TItem> list,
+        public static int BinarySearch<TItem, TSearch>(this IReadOnlyList<TItem> list,
             TSearch value, Func<TSearch, TItem, int> comparer)
         {
             if (list == null)
@@ -62,7 +61,7 @@ namespace Assets.Splines.Runtime
         /// <param name="list">The list to be searched.</param>
         /// <param name="value">The value to search for.</param>
         /// <returns></returns>
-        public static int BinarySearch<TItem>(this IList<TItem> list, TItem value)
+        public static int BinarySearch<TItem>(this IReadOnlyList<TItem> list, TItem value)
         {
             return BinarySearch(list, value, Comparer<TItem>.Default);
         }
@@ -76,7 +75,7 @@ namespace Assets.Splines.Runtime
         /// <param name="comparer">The comparer that is used to compare the value
         /// with the list items.</param>
         /// <returns></returns>
-        public static int BinarySearch<TItem>(this IList<TItem> list, TItem value,
+        public static int BinarySearch<TItem>(this IReadOnlyList<TItem> list, TItem value,
             IComparer<TItem> comparer)
         {
             return list.BinarySearch(value, comparer.Compare);
