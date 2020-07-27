@@ -135,8 +135,8 @@ namespace Splines
                 curveStartDistance = curveEndDistance;
                 curveEndDistance += enumerator.Current.Length;
 
-                if (curveEndDistance > distance ||
-                    Mathf.Approximately(distance, curveEndDistance))
+                if (curveEndDistance > distance &&
+                    curveStartDistance < distance)
                 {
                     innerDistance = distance - curveStartDistance;
                     return enumerator.Current;

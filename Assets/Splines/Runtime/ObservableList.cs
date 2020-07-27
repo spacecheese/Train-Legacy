@@ -41,17 +41,14 @@ namespace Splines
         int IndexOf(T item);
     }
 
-    public interface IObservableList<T> : IObservableReadOnlyList<T>, ICollection<T>
+    public interface IObservableList<T> : IObservableReadOnlyList<T>, IList<T>
     {
-        void Insert(int index, T item);
-        void RemoveAt(int index);
-
         new T this[int i] { get; set; }
     }
 
     public class ObservableList<T> : IObservableList<T>, IObservableReadOnlyList<T>
     {
-        private IList<T> list;
+        private readonly IList<T> list;
 
         public T this[int i] { 
             get => list[i];

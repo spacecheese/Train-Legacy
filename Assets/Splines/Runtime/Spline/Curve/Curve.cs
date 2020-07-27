@@ -1,8 +1,4 @@
-﻿using Assets.Splines.Runtime;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using UnityEngine;
 
 namespace Splines
@@ -45,12 +41,12 @@ namespace Splines
 
             int comparer(float a, CurveSample b)
             {
-                if (Mathf.Approximately(a, b.Distance))
-                    return 0;
-                else if (a > b.Distance)
+                if (a > b.Distance)
                     return 1;
-                else
+                else if (a < b.Distance)
                     return -1;
+                else
+                    return 0;
             }
             return samples.BinarySearch(distance, comparer);
         }
