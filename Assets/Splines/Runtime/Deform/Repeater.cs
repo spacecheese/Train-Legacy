@@ -133,19 +133,19 @@ namespace Splines.Deform
             }
         }
 
-        protected override List<GameObject> OnCurveAdded(Curve curve)
+        protected override List<GameObject> OnBeforeAttachmentAdded(Curve curve)
         {
             var list = new List<GameObject>(GetRepeatCount(curve));
             updateActions.Enqueue(() => UpdateCurve(curve, list));
             return list;
         }
 
-        protected override void OnCurveChanged(Curve curve, List<GameObject> attachment)
+        protected override void OnAttachmentChange(Curve curve, List<GameObject> attachment)
         {
             updateActions.Enqueue(() => UpdateCurve(curve, attachment));
         }
 
-        protected override void OnCurveRemoved(List<GameObject> attachment)
+        protected override void OnBeforeAttachmentRemoved(List<GameObject> attachment)
         {
             foreach (var go in attachment)
                 Utils.AutoDestroy(go);

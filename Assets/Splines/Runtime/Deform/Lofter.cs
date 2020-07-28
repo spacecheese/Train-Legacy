@@ -91,7 +91,7 @@ namespace Splines.Deform
             mesh.RecalculateNormals();
         }
 
-        protected override GameObject OnCurveAdded(Curve curve)
+        protected override GameObject OnBeforeAttachmentAdded(Curve curve)
         {
             var attachment = new GameObject("Loft", typeof(MeshFilter), typeof(MeshRenderer));
             attachment.transform.parent = transform;
@@ -100,12 +100,12 @@ namespace Splines.Deform
             return attachment;
         }
 
-        protected override void OnCurveChanged(Curve curve, GameObject attachment)
+        protected override void OnAttachmentChange(Curve curve, GameObject attachment)
         {
             updateActions.Enqueue(() => UpdateCurve(curve, attachment));
         }
 
-        protected override void OnCurveRemoved(GameObject attachment)
+        protected override void OnBeforeAttachmentRemoved(GameObject attachment)
         {
             Utils.AutoDestroy(attachment);
         }
