@@ -29,6 +29,10 @@ namespace Splines
         }
 
         /// <summary>
+        /// Cache used the store the last result of <see cref="FindSampleIndex(float)"/>. Format is distance, index.
+        /// </summary>
+        private (float, int) sampleCache = (-1,-1);
+        /// <summary>
         /// Performs a binary search to find the index of the sample at the specified distance or 
         /// the binary complement of the index of the sample above the specified distance.
         /// </summary>
@@ -39,6 +43,9 @@ namespace Splines
                 distance > Length && !Mathf.Approximately(distance, Length)) 
                 throw new ArgumentOutOfRangeException("distance");
 
+            if (distance == sampleCache.Item1)
+                return sampleCache.Item2;
+
             int comparer(float a, CurveSample b)
             {
                 if (a > b.Distance)
@@ -48,7 +55,11 @@ namespace Splines
                 else
                     return 0;
             }
-            return samples.BinarySearch(distance, comparer);
+
+            // Cache the last requested sample so that position/ normal lookups only require one search.
+            int samleIndex = samples.BinarySearch(distance, comparer);
+            sampleCache = (distance, samleIndex);
+            return samleIndex;
         }
 
         /// <summary>
@@ -63,29 +74,19 @@ namespace Splines
         private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float distance) =>
             Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, distance));
 
-        private void GetPositionNormalAtDistance(float distance,
-            out Vector3 position, out Vector3 normal)
-        {
-            int sampleIndex = FindSampleIndex(distance);
-            if (sampleIndex < 0)
-            {
-                position = GetPositionFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
-                normal = GetNormalFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
-            }
-            else
-            {
-                position = samples[sampleIndex].Position;
-                normal = samples[sampleIndex].Normal;
-            }
-        }
-
         /// <summary>
         /// Gets the approximate position at a distance along the curve.
         /// </summary>
         public Vector3 GetPositionAtDistance(float distance)
         {
-            GetPositionNormalAtDistance(distance, out Vector3 position, out Vector3 _);
-            return position;
+            int sampleIndex = FindSampleIndex(distance);
+
+            if (sampleIndex < 0)
+                // Distance lies between two samples.
+                return GetPositionFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
+            else
+                // Exact match for distance found.
+                return samples[sampleIndex].Position;
         }
 
         /// <summary>
@@ -93,8 +94,14 @@ namespace Splines
         /// </summary>
         public Vector3 GetNormalAtDistance(float distance)
         {
-            GetPositionNormalAtDistance(distance, out Vector3 _, out Vector3 normal);
-            return normal;
+            int sampleIndex = FindSampleIndex(distance);
+
+            if (sampleIndex < 0)
+                // Normal lies between two samples.
+                return GetNormalFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
+            else
+                // Exact match for distance found.
+                return samples[sampleIndex].Normal;
         }
 
         /// <summary>
@@ -102,8 +109,11 @@ namespace Splines
         /// </summary>
         public Quaternion GetRotationAtDistance(float distance)
         {
-            GetTransformAtDistance(distance, out Vector3 _, out Quaternion rotation);
-            return rotation;
+
+            Quaternion nodeRotation = Quaternion.Slerp(Start.Rotation, End.Rotation, distance / Length);
+            Vector3 normal = GetNormalAtDistance(distance);
+
+            return Quaternion.LookRotation(normal, nodeRotation * Vector3.up);
         }
 
         /// <summary>
@@ -112,10 +122,8 @@ namespace Splines
         public void GetTransformAtDistance(float distance,
             out Vector3 position, out Quaternion rotation)
         {
-            Quaternion nodeRotation = Quaternion.Slerp(Start.Rotation, End.Rotation, distance / Length);
-            GetPositionNormalAtDistance(distance, out position, out Vector3 normal);
-
-            rotation = Quaternion.LookRotation(normal, nodeRotation * Vector3.up);
+            position = GetPositionAtDistance(distance);
+            rotation = GetRotationAtDistance(distance);
         }
 
         public Curve(CurveNode start, CurveNode end, float tesselationError)

@@ -21,16 +21,5 @@ namespace Splines
         {
             return (deltaRotation * (point - center)) + center;
         }
-
-        /// <summary>
-        /// Checks if two points are within a cuboidal range of one another.
-        /// </summary>
-        public static bool IsWithinRange(this Vector3 point, Vector3 other, float range)
-        {
-            return
-                (point.x - other.x) < range &&
-                (point.y - other.y) < range &&
-                (point.z - other.z) < range;
-        }
     }
 }

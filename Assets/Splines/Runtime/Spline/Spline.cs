@@ -113,6 +113,10 @@ namespace Splines
         }
 
         /// <summary>
+        /// Cache used to store the last result from <see cref="GetCurveAtDistance(float , out float)"/>. Format is distance, innerDistance, Curve.
+        /// </summary>
+        private (float, float, Curve) curveCache = (-1, -1, null);
+        /// <summary>
         /// Finds the curve containing a distance along the spline.
         /// </summary>
         /// <param name="distance">
@@ -127,6 +131,12 @@ namespace Splines
             if (distance < 0)
                 throw new ArgumentOutOfRangeException("distance");
 
+            if (distance == curveCache.Item1)
+            {
+                innerDistance = curveCache.Item2;
+                return curveCache.Item3;
+            }
+
             float curveStartDistance, curveEndDistance = 0;
 
             var enumerator = Curves.GetEnumerator();
@@ -136,9 +146,11 @@ namespace Splines
                 curveEndDistance += enumerator.Current.Length;
 
                 if (curveEndDistance > distance &&
-                    curveStartDistance < distance)
+                    curveStartDistance <= distance)
                 {
                     innerDistance = distance - curveStartDistance;
+
+                    curveCache = (distance, innerDistance, enumerator.Current);
                     return enumerator.Current;
                 }
             }
