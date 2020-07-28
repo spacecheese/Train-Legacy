@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using UnityEngine;
 
@@ -112,6 +109,27 @@ namespace Splines
                 "node is not contained by the spline.", "node");
         }
 
+        private int GetCurveIndexAtDistance(float distance, out float startDistance)
+        {
+            float curveStartDistance, curveEndDistance = 0;
+
+            for (int i = 0; i < curves.Count; i++)
+            {
+                curveStartDistance = curveEndDistance;
+                curveEndDistance += curves[i].Length;
+
+                if (curveEndDistance > distance &&
+                    curveStartDistance <= distance)
+                {
+                    startDistance = curveStartDistance;
+                    return i;
+                }
+            }
+
+            startDistance = 0;
+            return -1;
+        }
+
         /// <summary>
         /// Cache used to store the last result from <see cref="GetCurveAtDistance(float , out float)"/>. Format is distance, innerDistance, Curve.
         /// </summary>
@@ -137,25 +155,36 @@ namespace Splines
                 return curveCache.Item3;
             }
 
-            float curveStartDistance, curveEndDistance = 0;
+            int index = GetCurveIndexAtDistance(distance, out float curveStartDistance);
 
-            var enumerator = Curves.GetEnumerator();
-            while (enumerator.MoveNext())
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("distance");
+
+            innerDistance = distance - curveStartDistance;
+
+            curveCache = (distance, innerDistance, curves[index]);
+            return curves[index];
+        }
+
+        /// <summary>
+        /// Finds curves that are in between or contain the specified bounds.
+        /// </summary>
+        public IReadOnlyList<Curve> GetCurvesContainingRange(float lowerDistance, float upperDistance)
+        {
+            int index = GetCurveIndexAtDistance(lowerDistance, out float curveStartDistance);
+            List<Curve> rangedCurves = new List<Curve>();
+            float curveEndDistance = curveStartDistance;
+
+            for (int i = index; i < curves.Count; i++)
             {
-                curveStartDistance = curveEndDistance;
-                curveEndDistance += enumerator.Current.Length;
+                curveEndDistance += curves[i].Length;
 
-                if (curveEndDistance > distance &&
-                    curveStartDistance <= distance)
-                {
-                    innerDistance = distance - curveStartDistance;
-
-                    curveCache = (distance, innerDistance, enumerator.Current);
-                    return enumerator.Current;
-                }
+                rangedCurves.Add(curves[i]);
+                if (upperDistance < curveEndDistance)
+                    break;
             }
 
-            throw new ArgumentOutOfRangeException("distance");
+            return rangedCurves;
         }
 
         /// <summary>
