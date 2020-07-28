@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Splines
@@ -33,19 +34,32 @@ namespace Splines
     {
         private bool samplesDirty = true;
 
-        private float tesselationError;
+        private Bounds bounds;
         /// <summary>
-        /// The differential error that will cause a curve segment to be subdivided with a new sample by tesselation.
-        /// Internally this is compared to the dot product of adjacent sample normals.
+        /// The bounds of all samples contained by the curve.
         /// </summary>
-        public float TesselationError
+        public Bounds Bounds
         {
-            get => tesselationError;
-            set
+            get { CheckSamples(); return bounds; }
+        }
+
+        private void CalculateBounds()
+        {
+            Vector3 min = samples.First().Position, max = samples.First().Position;
+
+            for (int i = 1; i < samples.Count; i++)
             {
-                tesselationError = value;
-                OnCurveChanged();
+                min.Set(
+                    Mathf.Min(min.x, samples[i].Position.x),
+                    Mathf.Min(min.y, samples[i].Position.y),
+                    Mathf.Min(min.z, samples[i].Position.z));
+                max.Set(
+                    Mathf.Max(max.x, samples[i].Position.x),
+                    Mathf.Max(max.y, samples[i].Position.y),
+                    Mathf.Max(max.z, samples[i].Position.z));
             }
+
+            bounds.SetMinMax(min, max);
         }
 
         private int minSamples = 4;
@@ -106,6 +120,21 @@ namespace Splines
             {
                 float time = 1f / (MinSamples - 1) * i;
                 samples.Add(Evaluate(time));
+            }
+        }
+
+        private float tesselationError;
+        /// <summary>
+        /// The differential error that will cause a curve segment to be subdivided with a new sample by tesselation.
+        /// Internally this is compared to the dot product of adjacent sample normals.
+        /// </summary>
+        public float TesselationError
+        {
+            get => tesselationError;
+            set
+            {
+                tesselationError = value;
+                OnCurveChanged();
             }
         }
 
@@ -175,6 +204,7 @@ namespace Splines
                 // Only tesselate and calculate distances if the curve was sampled.
                 TesselateSamples();
                 CalculateDistances();
+                CalculateBounds();
             }
         }
     }
