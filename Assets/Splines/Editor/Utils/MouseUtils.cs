@@ -52,10 +52,11 @@ namespace Splines
         /// the defaultDepth as a distance along the mouse ray (See <see cref="GetRayPosition(Ray, float)>"/>.
         /// </summary>
         public static void GetWorldMousePosition(Spline spline, out Vector3 position, out Vector3 normal, 
-            float defaultDepth = 10f)
+            float defaultDepth = 10f, float minDepth = 4f)
         {
             Ray ray = GetMouseRay();
-            GetRayPointOrHit(ray, GetAverageDepth(spline, ray, defaultDepth), out position, out normal);
+            float defaultMouseRayDepth = Mathf.Max(GetAverageDepth(spline, ray, defaultDepth), minDepth);
+            GetRayPointOrHit(ray, defaultMouseRayDepth, out position, out normal);
         }
     }
 }
