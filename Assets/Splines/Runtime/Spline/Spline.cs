@@ -270,11 +270,6 @@ namespace Splines
 
         private void NodesCleared(object sender, EventArgs e) => curves.Clear();
 
-        public void OnDestroy()
-        {
-            Nodes.Clear();
-        }
-
         public void OnEnable()
         {
             Nodes.ItemAdded += NodeAdded;

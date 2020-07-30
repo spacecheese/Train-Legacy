@@ -26,6 +26,11 @@ namespace Splines.Deform
             OnSplineChanged(null, Spline);
         }
 
+        public virtual void OnDisable()
+        {
+            OnSplineCleared(this, new EventArgs());
+        }
+
         protected virtual void OnSplineChanged(Spline oldValue, Spline newValue)
         {
             if (oldValue == newValue) return;
