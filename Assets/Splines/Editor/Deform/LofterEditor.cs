@@ -25,10 +25,18 @@ namespace Splines.Deform
             }
 
             EditorGUI.BeginChangeCheck();
-            Mesh profile = EditorGUILayout.ObjectField("Target Spline", loft.Profile, typeof(Mesh), true) as Mesh;
+            Mesh profile = EditorGUILayout.ObjectField("Profile", loft.Profile, typeof(Mesh), true) as Mesh;
             if (EditorGUI.EndChangeCheck())
             {
                 loft.Profile = profile;
+                SceneView.RepaintAll();
+            }
+
+            EditorGUI.BeginChangeCheck();
+            Material loftMaterial = EditorGUILayout.ObjectField("Material", loft.LoftMaterial, typeof(Material), true) as Material;
+            if (EditorGUI.EndChangeCheck())
+            {
+                loft.LoftMaterial = loftMaterial;
                 SceneView.RepaintAll();
             }
         }

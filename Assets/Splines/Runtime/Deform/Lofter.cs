@@ -13,15 +13,32 @@ namespace Splines.Deform
         public Mesh Profile
         {
             get => profile;
-            set { profile = value; }
+            set { profile = value; Refresh(); }
+        }
+
+        private Material loftMaterial;
+        public Material LoftMaterial
+        {
+            get => loftMaterial;
+            set { loftMaterial = value; UpdateMaterials(value); }
         }
 
         private readonly Queue<Action> updateActions = new Queue<Action>();
+
+        private void UpdateMaterials(Material newMaterial)
+        {
+            foreach (var attach in Attachments) 
+                if (attach != null)
+                    attach.GetComponent<MeshRenderer>().material = loftMaterial;
+        }
 
         private void UpdateCurve(Curve curve, GameObject attachment)
         {
             if (profile == null)
                 return;
+
+            if (attachment == null)
+                attachment = CreateAttachment();
 
             Mesh mesh = attachment.GetComponent<MeshFilter>().sharedMesh;
 
@@ -91,11 +108,17 @@ namespace Splines.Deform
             mesh.RecalculateNormals();
         }
 
-        protected override GameObject OnBeforeAttachmentAdded(Curve curve)
+        private GameObject CreateAttachment()
         {
             var attachment = new GameObject("Loft", typeof(MeshFilter), typeof(MeshRenderer));
             attachment.transform.parent = transform;
+            attachment.GetComponent<MeshRenderer>().material = LoftMaterial;
+            return attachment;
+        }
 
+        protected override GameObject OnBeforeAttachmentAdded(Curve curve)
+        {
+            var attachment = CreateAttachment();
             updateActions.Enqueue(() => UpdateCurve(curve, attachment));
             return attachment;
         }
@@ -115,5 +138,6 @@ namespace Splines.Deform
             while (updateActions.Count > 0)
                 updateActions.Dequeue().Invoke();
         }
+        // Something   something something
     }
 }
