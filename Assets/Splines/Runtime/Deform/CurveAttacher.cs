@@ -106,12 +106,5 @@ namespace Splines.Deform
             for (int i = 0; i < Spline.Curves.Count; i++)
                 OnAttachmentChange(Spline.Curves[i], attachments[i]);
         }
-
-        private void Update()
-        {
-            if (transform.hasChanged)
-                if (transform.parent.gameObject.TryGetComponent(out Spline spline))
-                    Spline = spline;
-        }
     }
 }
