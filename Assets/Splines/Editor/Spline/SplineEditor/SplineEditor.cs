@@ -62,10 +62,9 @@ namespace Splines
         private static void HalveCurve(int index, Spline spline)
         {
             float distance = spline.Curves[index].Length / 2;
+            var curve = spline.Curves[index];
             CurveNode middle =
-                new CurveNode(
-                    spline.Curves[index].GetPositionAtDistance(distance),
-                    spline.Curves[index].GetRotationAtDistance(distance));
+                new CurveNode(curve.GetPositionAtDistance(distance), curve.GetAngleAtDistance(distance));
 
             spline.Nodes.Insert(index + 1, middle);
             SceneView.RepaintAll();
@@ -73,16 +72,16 @@ namespace Splines
 
         private static void AddHandle(Spline spline, CurveNode node, CurveNode.HandleRelation relation)
         {
-            const float HANDLE_NORMAL_SCALE = 2f;
+            const float HANDLE_TANGENT_SCALE = 2f;
 
-            Vector3 normal = node.Rotation * Vector3.forward;
-            normal.Normalize();
+            Vector3 tangent = node.Rotation * Vector3.forward;
+            tangent.Normalize();
 
             Vector3? handlePosition = null;
             if (relation == CurveNode.HandleRelation.Before)
-                handlePosition = -(normal * HANDLE_NORMAL_SCALE);
+                handlePosition = -(tangent * HANDLE_TANGENT_SCALE);
             else if (relation == CurveNode.HandleRelation.After)
-                handlePosition = normal * HANDLE_NORMAL_SCALE;
+                handlePosition = tangent * HANDLE_TANGENT_SCALE;
 
             node.SetHandle(relation, handlePosition);
                 

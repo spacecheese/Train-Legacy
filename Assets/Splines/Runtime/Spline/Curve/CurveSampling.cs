@@ -12,21 +12,15 @@ namespace Splines
     {
         public float Time;
         public Vector3 Position;
-        public Vector3 Normal;
+        public Vector3 Tangent;
         public float Distance;
 
-        public CurveSample(float time, Vector3 position, Vector3 normal, float distance = default)
+        public CurveSample(float time, Vector3 position, Vector3 tangent, float distance = default)
         {
             Time = time;
             Distance = distance;
-            Normal = normal;
+            Tangent = tangent;
             Position = position;
-        }
-
-        public Quaternion GetRotation(Curve parent)
-        {
-            Quaternion rotation = Quaternion.Slerp(parent.Start.Rotation, parent.End.Rotation, Distance / parent.Length);
-            return Quaternion.LookRotation(Normal, rotation * Vector3.up);
         }
     }
 
@@ -64,7 +58,7 @@ namespace Splines
 
         private int minSamples = 4;
         /// <summary>
-        /// The minimum number of samples (including nodes at either end) used to approximate the curve.
+        /// The minimum number of samples (including nodes at either end) used to approximate the curve before optional tesselation.
         /// </summary>
         public int MinSamples
         {
@@ -90,12 +84,12 @@ namespace Splines
             evaluationPoints.Clear();
             evaluationPoints.AddRange(ControlPoints);
 
-            Vector3 normal = Vector3.zero;
+            Vector3 tangent = Vector3.zero;
             while (evaluationPoints.Count > 1)
             {
                 // See https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Higher-order_curves
                 if (evaluationPoints.Count == 2)
-                    normal = evaluationPoints[1] - evaluationPoints[0];
+                    tangent = evaluationPoints[1] - evaluationPoints[0];
 
                 for (int i = 1; i < evaluationPoints.Count; i++)
                     evaluationPoints[i - 1] = Vector3.Lerp(evaluationPoints[i - 1], evaluationPoints[i], time);
@@ -103,7 +97,7 @@ namespace Splines
                 evaluationPoints.RemoveAt(evaluationPoints.Count - 1);
             }
 
-            return new CurveSample(time, evaluationPoints[0], normal);
+            return new CurveSample(time, evaluationPoints[0], tangent);
         }
 
         /// <summary>
@@ -115,18 +109,16 @@ namespace Splines
 
             samples.Clear();
 
+            float timeStep = 1f / (MinSamples - 1);
             // Evaluate at equal increments of t until samples is filled.
             for (int i = 0; i < MinSamples; i++)
-            {
-                float time = 1f / (MinSamples - 1) * i;
-                samples.Add(Evaluate(time));
-            }
+                samples.Add(Evaluate(timeStep * i));
         }
 
         private float tesselationError;
         /// <summary>
         /// The differential error that will cause a curve segment to be subdivided with a new sample by tesselation.
-        /// Internally this is compared to the dot product of adjacent sample normals.
+        /// Internally this is compared to the dot product of adjacent sample tangents.
         /// </summary>
         public float TesselationError
         {
@@ -151,10 +143,10 @@ namespace Splines
             {
                 while (true)
                 {
-                    // Ideally the dot product of the normalized normals should be 1.
-                    float normalError = 1 - Vector3.Dot(samples[i - 1].Normal.normalized, samples[i].Normal.normalized);
+                    // Ideally the dot product of the normalized tangents should be 1.
+                    float tangentError = 1 - Vector3.Dot(samples[i - 1].Tangent.normalized, samples[i].Tangent.normalized);
 
-                    if (normalError < TesselationError)
+                    if (tangentError < TesselationError)
                         // Do nothing if the error is within tolerance.
                         break;
                     else

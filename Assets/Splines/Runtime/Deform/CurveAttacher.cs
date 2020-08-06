@@ -98,7 +98,7 @@ namespace Splines.Deform
             }
         }
 
-        public void Refresh()
+        public virtual void Refresh()
         {
             if (Spline == null)
                 return;

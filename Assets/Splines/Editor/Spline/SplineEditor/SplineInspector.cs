@@ -115,10 +115,10 @@ namespace Splines
                 }
 
                 EditorGUI.BeginChangeCheck();
-                Quaternion rotation = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation", selectedNode.Rotation.eulerAngles));
+                float angle = EditorGUILayout.FloatField("Angle", selectedNode.Angle);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    selectedNode.Rotation = rotation;
+                    selectedNode.Angle = angle;
                     SceneView.RepaintAll();
                 }
 

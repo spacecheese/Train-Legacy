@@ -48,6 +48,18 @@ namespace Splines
             }
         }
 
+        public Bounds Bounds
+        {
+            get
+            {
+                var bounds = new Bounds();
+
+                foreach (var curve in Curves)
+                    bounds.Encapsulate(curve.Bounds);
+                return bounds;
+            }
+        }
+
         /// <summary>
         /// Indicates if the spline is connected at either end.
         /// </summary>
@@ -197,7 +209,7 @@ namespace Splines
         }
 
         /// <summary>
-        /// Gets a Quaternion that will rotate a <see cref="Vector3.forward"/> to face the normal of the spline at the specifed distance.
+        /// Gets a Quaternion that will rotate a <see cref="Vector3.forward"/> to face the tangent of the spline at the specifed distance.
         /// </summary>
         public Quaternion GetRotationAtDistance(float distance)
         {
@@ -206,16 +218,16 @@ namespace Splines
         }
 
         /// <summary>
-        /// Gives the approximate normal of the spline at the specified distance.
+        /// Gives the approximate tangent of the spline at the specified distance.
         /// </summary>
-        public Vector3 GetNormalAtDistance(float distance)
+        public Vector3 GetTangentAtDistance(float distance)
         {
             var curve = GetCurveAtDistance(distance, out float innerDistance);
-            return curve.GetNormalAtDistance(innerDistance);
+            return curve.GetTangentAtDistance(innerDistance);
         }
 
         /// <summary>
-        /// Gets the approximate position and normal of the spline at a specified distance.
+        /// Gets the approximate position and rotation of the spline at a specified distance.
         /// </summary>
         public void GetTransformAtDistance(float distance, 
             out Vector3 position, out Quaternion rotation)

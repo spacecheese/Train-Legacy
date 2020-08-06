@@ -83,8 +83,7 @@ namespace Splines
                 Event.current.button == 0)
             {
                 MouseUtils.GetWorldMousePosition(activeSpline, out Vector3 position, out Vector3 normal);
-                lastNewNode = new CurveNode(position, Quaternion.AngleAxis(0, normal),
-                    null, null, CurveNode.HandleConstraintType.Symmetric);
+                lastNewNode = new CurveNode(position, 0, null, null, CurveNode.HandleConstraintType.Symmetric);
                 AttachNode(activeSpline, lastNewNode);
 
                 Event.current.Use();

@@ -55,12 +55,10 @@ namespace Splines
                 selectedHandleRelation == CurveNode.HandleRelation.None)
             {
                 Vector3 position = node.Position;
-                Quaternion rotation = node.Rotation;
 
-                DrawTooledHandle(ref position, ref rotation);
+                DrawTooledHandle(ref position, node.Rotation);
                     
                 if (node.Position != position) node.Position = position;
-                if (node.Rotation != rotation) node.Rotation = rotation;
 
                 Handles.color = selectedNodeColor;
             }

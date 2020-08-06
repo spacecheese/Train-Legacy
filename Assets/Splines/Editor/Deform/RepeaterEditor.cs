@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace Splines.Deform
 {
@@ -50,7 +50,7 @@ namespace Splines.Deform
         }
 
         [MenuItem("GameObject/3D Object/Splines/Repeater")]
-        public static void CreateEmptySpline()
+        public static void CreateRepeater()
         {
             var repeater = new GameObject("Repeater", typeof(Repeater));
             Selection.activeObject = repeater;

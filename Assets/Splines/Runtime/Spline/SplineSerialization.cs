@@ -9,7 +9,7 @@ namespace Splines
     public class SerializableCurveNode
     {
         public Vector3 Position;
-        public Quaternion Rotation;
+        public float Angle;
 
         public bool BeforeHandleSet;
         public Vector3 BeforeHandle;
@@ -21,7 +21,7 @@ namespace Splines
 
         public static explicit operator CurveNode(SerializableCurveNode node)
         {
-            var newNode = new CurveNode(node.Position, node.Rotation,
+            var newNode = new CurveNode(node.Position, node.Angle,
                 node.BeforeHandle, node.AfterHandle, node.HandleConstraint);
 
             if (!node.BeforeHandleSet) newNode.BeforeHandle = null;
@@ -32,16 +32,16 @@ namespace Splines
 
         public static explicit operator SerializableCurveNode(CurveNode node)
         {
-            return new SerializableCurveNode(node.Position, node.Rotation,
+            return new SerializableCurveNode(node.Position, node.Angle,
                 node.BeforeHandle, node.AfterHandle, node.HandleConstraint);
         }
 
-        public SerializableCurveNode(Vector3 position, Quaternion rotation, 
+        public SerializableCurveNode(Vector3 position, float angle, 
             Vector3? beforeHandle, Vector3? afterHandle, 
             CurveNode.HandleConstraintType handleConstraint)
         {
             Position = position;
-            Rotation = rotation;
+            Angle = angle;
 
             BeforeHandleSet = beforeHandle.HasValue;
             BeforeHandle = beforeHandle.GetValueOrDefault();

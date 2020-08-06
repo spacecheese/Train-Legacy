@@ -25,12 +25,12 @@ namespace Splines
             if (spline == null)
                 return;
 
-            Vector3 curveNormal = spline.GetNormalAtDistance(distance).normalized;
+            Vector3 curveTangent = spline.GetTangentAtDistance(distance).normalized;
             Quaternion rotation = spline.GetRotationAtDistance(distance);
 
-            curveVelocity = Vector3.Dot(body.velocity, curveNormal);
+            curveVelocity = Vector3.Dot(body.velocity, curveTangent);
             // Only keep the portion of the body velocity acting along the spline.
-            body.velocity = curveVelocity * curveNormal;
+            body.velocity = curveVelocity * curveTangent;
 
             transform.position = spline.GetPositionAtDistance(distance);
             transform.rotation = rotation;

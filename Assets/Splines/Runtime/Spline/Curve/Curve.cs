@@ -56,7 +56,7 @@ namespace Splines
                     return 0;
             }
 
-            // Cache the last requested sample so that position/ normal lookups only require one search.
+            // Cache the last requested sample so that position/ tangent lookups only require one search.
             int samleIndex = samples.BinarySearch(distance, comparer);
             sampleCache = (distance, samleIndex);
             return samleIndex;
@@ -71,8 +71,8 @@ namespace Splines
         private static Vector3 GetPositionFromSamples(CurveSample lower, CurveSample upper, float distance) =>
             Vector3.Lerp(lower.Position, upper.Position, GetIntervalTime(lower, upper, distance));
 
-        private static Vector3 GetNormalFromSamples(CurveSample lower, CurveSample upper, float distance) =>
-            Vector3.Lerp(lower.Normal, upper.Normal, GetIntervalTime(lower, upper, distance));
+        private static Vector3 GetTangentFromSamples(CurveSample lower, CurveSample upper, float distance) =>
+            Vector3.Lerp(lower.Tangent, upper.Tangent, GetIntervalTime(lower, upper, distance));
 
         /// <summary>
         /// Gets the approximate position at a distance along the curve.
@@ -90,34 +90,43 @@ namespace Splines
         }
 
         /// <summary>
-        /// Gets the approximate normal at a distance along the curve.
+        /// Gets the approximate tangent at a distance along the curve.
         /// </summary>
-        public Vector3 GetNormalAtDistance(float distance)
+        public Vector3 GetTangentAtDistance(float distance)
         {
             int sampleIndex = FindSampleIndex(distance);
 
             if (sampleIndex < 0)
-                // Normal lies between two samples.
-                return GetNormalFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
+                // Tangent lies between two samples.
+                return GetTangentFromSamples(samples[~sampleIndex - 1], samples[~sampleIndex], distance);
             else
                 // Exact match for distance found.
-                return samples[sampleIndex].Normal;
+                return samples[sampleIndex].Tangent;
         }
 
         /// <summary>
-        /// Gets a Quaternion that will rotate a <see cref="Vector3.forward"/> to face the normal of the curve at the specifed distance.
+        /// Gets the angle about the tangent axis at the specified distance.
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        public float GetAngleAtDistance(float distance)
+        {
+            return Mathf.Lerp(Start.Angle, End.Angle, distance / Length);
+        }
+
+        /// <summary>
+        /// Gets a Quaternion that will rotate a <see cref="Vector3.forward"/> to face the tangent of the curve at the specifed distance.
         /// </summary>
         public Quaternion GetRotationAtDistance(float distance)
         {
+            float angle = GetAngleAtDistance(distance);
+            Vector3 tangent = GetTangentAtDistance(distance);
 
-            Quaternion nodeRotation = Quaternion.Slerp(Start.Rotation, End.Rotation, distance / Length);
-            Vector3 normal = GetNormalAtDistance(distance);
-
-            return Quaternion.LookRotation(normal, nodeRotation * Vector3.up);
+            return Quaternion.AngleAxis(angle, tangent);
         }
 
         /// <summary>
-        /// Gets the approximate position and normal of the curve at a specified distance.
+        /// Gets the approximate position and rotation of the curve at a specified distance.
         /// </summary>
         public void GetTransformAtDistance(float distance,
             out Vector3 position, out Quaternion rotation)

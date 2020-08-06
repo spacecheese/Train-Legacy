@@ -8,6 +8,55 @@ namespace Splines
         public enum HandleConstraintType { None, Aligned, Symmetric }
         public enum HandleRelation { None, Before, After }
 
+        private Vector3 position;
+        /// <summary>
+        /// The position of the curve node in world space.
+        /// </summary>
+        public Vector3 Position
+        {
+            get { return position; }
+            set { position = value; OnNodeChanged(); }
+        }
+
+        private float angle;
+        /// <summary>
+        /// Angle of the node about the tangent axis.
+        /// </summary>
+        public float Angle
+        {
+            get { return angle; }
+            set { angle = value; OnNodeChanged(); }
+        }
+
+        /// <summary>
+        /// The tangent of the node.
+        /// </summary>
+        public Vector3 Tangent => afterHandle.GetValueOrDefault() - beforeHandle.GetValueOrDefault();
+
+        /// <summary>
+        /// Normal of the node.
+        /// </summary>
+        public Vector3 Normal => Rotation * Vector3.up;
+
+        /// <summary>
+        /// Rotation of the node 
+        /// </summary>
+        public Quaternion Rotation
+        {
+            get => Quaternion.AngleAxis(Angle, Tangent) * Quaternion.FromToRotation(Vector3.forward, Tangent);
+        } 
+           
+
+        private HandleConstraintType handleConstraint;
+        /// <summary>
+        /// Indicates how the handles should be constrained to one another.
+        /// </summary>
+        public HandleConstraintType HandleConstraint
+        {
+            get { return handleConstraint; }
+            set { handleConstraint = value; OnHandleChanged(ref beforeHandle, afterHandle); }
+        }
+
         private Vector3? beforeHandle;
         /// <summary>
         /// Position before the node in node local space.
@@ -75,56 +124,27 @@ namespace Splines
             };
         }
 
-        private Vector3 position;
         /// <summary>
-        /// The position of the curve node in world space.
+        /// Fired when a property of the node is modified.
         /// </summary>
-        public Vector3 Position {
-            get { return position; } 
-            set { position = value; OnNodeChanged(); }
-        }
-
-        private Quaternion rotation;
-        /// <summary>
-        /// The rotation of the curve node in world space.
-        /// </summary>
-        public Quaternion Rotation {
-            get { return rotation; }
-            set {
-                if (beforeHandle.HasValue)
-                    beforeHandle = beforeHandle.Value.RotateAbout(Vector3.zero, rotation, value);
-                if (afterHandle.HasValue)
-                    afterHandle = afterHandle.Value.RotateAbout(Vector3.zero, rotation, value);
-
-                rotation = value; 
-                OnNodeChanged(); 
-            }
-        }
-
-        private HandleConstraintType handleConstraint;
-        /// <summary>
-        /// Indicates how the handles should be constrained to one another.
-        /// </summary>
-        public HandleConstraintType HandleConstraint {
-            get { return handleConstraint; }
-            set { handleConstraint = value; OnHandleChanged(ref beforeHandle, afterHandle); }
-        }
-
         public event EventHandler NodeChanged;
 
-        /// <summary>
-        /// Rotate the node to align with the normal of the handles if possible.
-        /// </summary>
-        private void AlignRotation()
+        private void OnNodeChanged()
         {
-            if (HandleConstraint == HandleConstraintType.None) return;
-            if (!AfterHandle.HasValue || !BeforeHandle.HasValue) return;
-            if (AfterHandle.Value == BeforeHandle.Value) return;
+            NodeChanged?.Invoke(this, new EventArgs());
+        }
 
-            Vector3 up = Rotation * Vector3.up;
-            Vector3 forward = AfterHandle.Value - BeforeHandle.Value;
+        private void OnHandleChanged(ref Vector3? movedHandle, Vector3? otherHandle)
+        {
+            if (movedHandle.HasValue && otherHandle.HasValue)
+            {
+                // If both handles are set reposition the handles to match HandleConstraint.
+                Vector3 movedHandleValue = movedHandle.Value;
+                PositionHandles(ref movedHandleValue, otherHandle.Value);
+                movedHandle = movedHandleValue;
+            }
 
-            rotation = Quaternion.LookRotation(forward, up);
+            OnNodeChanged();
         }
 
         /// <summary>
@@ -148,33 +168,14 @@ namespace Splines
             }
         }
 
-        private void OnHandleChanged(ref Vector3? movedHandle, Vector3? otherHandle)
-        {
-            if (movedHandle.HasValue && otherHandle.HasValue)
-            {
-                // If both handles are set reposition the handles to match HandleConstraint.
-                Vector3 movedHandleValue = movedHandle.Value;
-                PositionHandles(ref movedHandleValue, otherHandle.Value);
-                movedHandle = movedHandleValue;
-            }
+        public CurveNode(CurveNode node) : this(node.position, node.angle, node.beforeHandle, node.afterHandle, node.handleConstraint) { }
 
-            AlignRotation();
-            OnNodeChanged();
-        }
-
-        private void OnNodeChanged()
-        {
-            NodeChanged?.Invoke(this, new EventArgs());
-        }
-
-        public CurveNode(CurveNode node) : this(node.position, node.rotation, node.beforeHandle, node.afterHandle, node.handleConstraint) { }
-
-        public CurveNode(Vector3 position, Quaternion rotation,
+        public CurveNode(Vector3 position, float angle,
             Vector3? beforeHandle = null, Vector3? afterHandle = null, 
             HandleConstraintType handleConstraint = HandleConstraintType.None)
         {
             this.position = position;
-            this.rotation = rotation;
+            this.angle = angle;
 
             this.beforeHandle = beforeHandle;
             this.afterHandle = afterHandle;
