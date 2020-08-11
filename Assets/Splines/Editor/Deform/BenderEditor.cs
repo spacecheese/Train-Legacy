@@ -33,7 +33,7 @@ namespace Splines.Deform
             }
 
             EditorGUI.BeginChangeCheck();
-            Mesh mesh = EditorGUILayout.ObjectField("Material", bender.BendingMesh, typeof(Mesh), true) as Mesh;
+            Mesh mesh = EditorGUILayout.ObjectField("Mesh", bender.BendingMesh, typeof(Mesh), true) as Mesh;
             if (EditorGUI.EndChangeCheck())
             {
                 bender.BendingMesh = mesh;

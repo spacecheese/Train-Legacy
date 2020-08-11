@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Splines.Deform
 {
+    [ExecuteAlways]
     public class Bender : CurveAttacher<MaterialPropertyBlock>
     {
         [SerializeField]
@@ -34,11 +35,11 @@ namespace Splines.Deform
         private void UpdateCurveProperties(Curve curve, MaterialPropertyBlock block)
         {
             block.SetVector(startId, curve.Start.Position);
-            block.SetFloat(startAngleId, 0);
+            block.SetFloat(startAngleId, curve.Start.Angle);
             block.SetVector(startHandleId, curve.Start.AfterHandle.GetValueOrDefault());
 
             block.SetVector(endId, curve.End.Position);
-            block.SetFloat(endAngleId, 0);
+            block.SetFloat(endAngleId, curve.End.Angle);
             block.SetVector(endHandleId, curve.End.BeforeHandle.GetValueOrDefault());
         }
 
@@ -82,10 +83,17 @@ namespace Splines.Deform
 
         public void Update()
         {
-            // Draw a mesh for each curve.
-            foreach (var attachment in Attachments)
-                Graphics.DrawMesh(bendingMesh, Matrix4x4.identity,
-                    bendingMaterial, 0, null, 0, attachment);
+            var modelBounds = bendingMesh.bounds;
+            for (int i = 0; i < Attachments.Count; i++)
+            {
+                Bounds deformedBounds = Spline.Curves[i].Bounds;
+                deformedBounds.size += modelBounds.size;
+
+                bendingMesh.bounds = deformedBounds;
+                Graphics.DrawMesh(bendingMesh, Vector3.zero, Quaternion.identity,
+                    bendingMaterial, 0, null, 0, Attachments[i]);
+            }
+            bendingMesh.bounds = modelBounds;
         }
     }
 
