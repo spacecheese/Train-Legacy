@@ -72,19 +72,33 @@ namespace Splines
 
         private static void AddHandle(Spline spline, CurveNode node, CurveNode.HandleRelation relation)
         {
-            const float HANDLE_TANGENT_SCALE = 2f;
+            const float HANDLE_DISTANCE_FACTOR = .2f;
 
-            Vector3 tangent = node.Rotation * Vector3.forward;
-            tangent.Normalize();
+            Curve beforeCurve = spline.GetRelatedCurveFromNode(node, Curve.NodeRelation.End);
+            Curve afterCurve = spline.GetRelatedCurveFromNode(node, Curve.NodeRelation.Start);
 
-            Vector3? handlePosition = null;
+            Vector3? beforePosition, afterPosition;
+            Vector3 handle = Vector3.zero;
+
+            beforePosition = beforeCurve?.GetPositionAtDistance(beforeCurve.Length - beforeCurve.Length * HANDLE_DISTANCE_FACTOR) - node.Position;
+            afterPosition = afterCurve?.GetPositionAtDistance(afterCurve.Length * HANDLE_DISTANCE_FACTOR) - node.Position;
+
             if (relation == CurveNode.HandleRelation.Before)
-                handlePosition = -(tangent * HANDLE_TANGENT_SCALE);
+            {
+                if (beforePosition.HasValue)
+                    handle = beforePosition.Value;
+                else
+                    handle = -afterPosition.GetValueOrDefault();
+            }
             else if (relation == CurveNode.HandleRelation.After)
-                handlePosition = tangent * HANDLE_TANGENT_SCALE;
+            {
+                if (afterPosition.HasValue)
+                    handle = afterPosition.Value;
+                else
+                    handle = -beforePosition.GetValueOrDefault();
+            }
+            node.SetHandle(relation, handle);
 
-            node.SetHandle(relation, handlePosition);
-                
             SceneView.RepaintAll();
         }
 
