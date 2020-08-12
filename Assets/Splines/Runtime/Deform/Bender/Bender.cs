@@ -83,6 +83,9 @@ namespace Splines.Deform
 
         public void Update()
         {
+            if (bendingMesh == null || Spline == null)
+                return;
+
             var modelBounds = bendingMesh.bounds;
             for (int i = 0; i < Attachments.Count; i++)
             {
