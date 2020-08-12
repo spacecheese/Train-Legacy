@@ -121,6 +121,22 @@ namespace Splines
                 "node is not contained by the spline.", "node");
         }
 
+        /// <summary>
+        /// Finds the curve where the specified node corresponds to the specified node relation.
+        /// </summary>
+        public Curve GetRelatedCurveFromNode(CurveNode node, Curve.NodeRelation relation)
+        {
+            foreach (var curve in Curves)
+            {
+                if (relation == Curve.NodeRelation.Start && curve.Start == node)
+                    return curve;
+                else if (relation == Curve.NodeRelation.End && curve.End == node)
+                    return curve;
+            }
+
+            return null;
+        }
+
         private int GetCurveIndexAtDistance(float distance, out float startDistance)
         {
             float curveStartDistance, curveEndDistance = 0;

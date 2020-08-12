@@ -5,6 +5,8 @@ namespace Splines
 {
     public partial class Curve
     {
+        public enum NodeRelation { None, Start, End }
+
         /// <summary>
         /// The approximate length of the curve.
         /// </summary>
