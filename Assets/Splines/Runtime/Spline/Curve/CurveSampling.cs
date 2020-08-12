@@ -59,12 +59,18 @@ namespace Splines
         private int minSamples = 4;
         /// <summary>
         /// The minimum number of samples (including nodes at either end) used to approximate the curve before optional tesselation.
+        /// For a straight line this will always be 2.
         /// </summary>
         public int MinSamples
         {
-            get => ControlPoints.Count <= 2 ? 2 : minSamples;
+            get => Order == 1 ? 2 : minSamples;
             set => minSamples = value;
         }
+
+        /// <summary>
+        /// Indicates the order of the curve. 1 for linear, 2 for quadratic and 3 for cubic.
+        /// </summary>
+        public int Order => ControlPoints.Count - 1;
 
         private readonly List<CurveSample> samples = new List<CurveSample>();
         /// <summary>
@@ -84,20 +90,19 @@ namespace Splines
             evaluationPoints.Clear();
             evaluationPoints.AddRange(ControlPoints);
 
-            Vector3 tangent = Vector3.zero;
-            while (evaluationPoints.Count > 1)
+            while (evaluationPoints.Count > 2)
             {
                 // See https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Higher-order_curves
-                if (evaluationPoints.Count == 2)
-                    tangent = evaluationPoints[1] - evaluationPoints[0];
-
-                for (int i = 1; i < evaluationPoints.Count; i++)
-                    evaluationPoints[i - 1] = Vector3.Lerp(evaluationPoints[i - 1], evaluationPoints[i], time);
+                for (int i = 0; i < evaluationPoints.Count - 1; i++)
+                    evaluationPoints[i] = Vector3.Lerp(evaluationPoints[i], evaluationPoints[i + 1], time);
 
                 evaluationPoints.RemoveAt(evaluationPoints.Count - 1);
             }
 
-            return new CurveSample(time, evaluationPoints[0], tangent);
+            Vector3 position = Vector3.Lerp(evaluationPoints[0], evaluationPoints[1], time);
+            Vector3 tangent = evaluationPoints[1] - evaluationPoints[0];
+
+            return new CurveSample(time, position, tangent);
         }
 
         /// <summary>
