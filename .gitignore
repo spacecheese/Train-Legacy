@@ -32,3 +32,9 @@ Thumbs.db
 
 .vs
 ProjectSettings/HDRPProjectSettings.asset
+
+# Package sources
+Packages
+!Packages/packages-lock.json
+!Packages/manifest.json
+LocalPackages
