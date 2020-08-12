@@ -3,7 +3,10 @@ guid: d70db94ad8747bc45874568e59f09e2d
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - spline: {instanceID: 0}
+  - bendingMaterial: {fileID: 2100000, guid: 5bf73f1c04278264ba553823e800fa01, type: 2}
+  - bendingMesh: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
