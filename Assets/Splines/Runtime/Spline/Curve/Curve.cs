@@ -31,10 +31,6 @@ namespace Splines
         }
 
         /// <summary>
-        /// Cache used the store the last result of <see cref="FindSampleIndex(float)"/>. Format is distance, index.
-        /// </summary>
-        private (float, int) sampleCache = (-1,-1);
-        /// <summary>
         /// Performs a binary search to find the index of the sample at the specified distance or 
         /// the binary complement of the index of the sample above the specified distance.
         /// </summary>
@@ -44,9 +40,6 @@ namespace Splines
             if (distance < 0 ||
                 distance > Length && !Mathf.Approximately(distance, Length)) 
                 throw new ArgumentOutOfRangeException("distance");
-
-            if (distance == sampleCache.Item1)
-                return sampleCache.Item2;
 
             int comparer(float a, CurveSample b)
             {
@@ -58,10 +51,7 @@ namespace Splines
                     return 0;
             }
 
-            // Cache the last requested sample so that position/ tangent lookups only require one search.
-            int samleIndex = samples.BinarySearch(distance, comparer);
-            sampleCache = (distance, samleIndex);
-            return samleIndex;
+            return samples.BinarySearch(distance, comparer);
         }
 
         /// <summary>

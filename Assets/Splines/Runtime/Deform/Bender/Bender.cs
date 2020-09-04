@@ -23,8 +23,22 @@ namespace Splines.Deform
             set { bendingMesh = value; OnMeshChanged(); }
         }
 
+        private Vector2 modelOffset;
+        public Vector2 ModelOffset
+        {
+            get { return modelOffset; }
+            set { modelOffset = value; OnModelOffsetChanged(); }
+        }
+
         private int startId, startAngleId, startHandleId;
         private int endId, endAngleId, endHandleId;
+        private int modelOffsetId;
+
+        private void OnModelOffsetChanged()
+        {
+            foreach (var attachment in Attachments)
+                attachment.SetVector(modelOffsetId, modelOffset);
+        }
 
         private void OnMeshChanged()
         {
@@ -61,6 +75,8 @@ namespace Splines.Deform
             endId = Shader.PropertyToID("_End");
             endAngleId = Shader.PropertyToID("_EndAngle");
             endHandleId = Shader.PropertyToID("_EndHandle");
+
+            modelOffsetId = Shader.PropertyToID("_ModelOffset");
         }
 
         protected override MaterialPropertyBlock OnBeforeAttachmentAdded(Curve curve)

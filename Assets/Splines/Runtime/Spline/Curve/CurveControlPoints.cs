@@ -48,12 +48,12 @@ namespace Splines
             }
         }
 
+        private void NodeChanged(object sender, EventArgs evt) => OnCurveChanged();
+
         /// <summary>
         /// Returns a list of the positions of handles and nodes for convenient use by <see cref="Evaluate(float)"/>.
         /// </summary>
         private readonly List<Vector3> ControlPoints = new List<Vector3>(4);
-
-        private void NodeChanged(object sender, EventArgs evt) => OnCurveChanged();
 
         private void PopulateControlPoints()
         {

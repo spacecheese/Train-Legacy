@@ -48,6 +48,9 @@ namespace Splines
             }
         }
 
+        /// <summary>
+        /// Get the complete bounds of the spline.
+        /// </summary>
         public Bounds Bounds
         {
             get
@@ -106,7 +109,8 @@ namespace Splines
         /// </summary>
         public float GetDistanceOfNode(CurveNode node)
         {
-            if (node == Start) return 0;
+            if (node == Start)
+                return 0;
 
             float distance = 0;
             foreach (var item in Curves)
@@ -159,10 +163,6 @@ namespace Splines
         }
 
         /// <summary>
-        /// Cache used to store the last result from <see cref="GetCurveAtDistance(float , out float)"/>. Format is distance, innerDistance, Curve.
-        /// </summary>
-        private (float, float, Curve) curveCache = (-1, -1, null);
-        /// <summary>
         /// Finds the curve containing a distance along the spline.
         /// </summary>
         /// <param name="distance">
@@ -177,20 +177,12 @@ namespace Splines
             if (distance < 0)
                 throw new ArgumentOutOfRangeException("distance");
 
-            if (distance == curveCache.Item1)
-            {
-                innerDistance = curveCache.Item2;
-                return curveCache.Item3;
-            }
-
             int index = GetCurveIndexAtDistance(distance, out float curveStartDistance);
 
             if (index < 0)
                 throw new ArgumentOutOfRangeException("distance");
 
             innerDistance = distance - curveStartDistance;
-
-            curveCache = (distance, innerDistance, curves[index]);
             return curves[index];
         }
 

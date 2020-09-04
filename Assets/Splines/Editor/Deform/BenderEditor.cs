@@ -39,6 +39,14 @@ namespace Splines.Deform
                 bender.BendingMesh = mesh;
                 SceneView.RepaintAll();
             }
+
+            EditorGUI.BeginChangeCheck();
+            Vector2 offset = EditorGUILayout.Vector2Field("Offset", bender.ModelOffset);
+            if (EditorGUI.EndChangeCheck())
+            {
+                bender.ModelOffset = offset;
+                SceneView.RepaintAll();
+            }
         }
 
         [MenuItem("GameObject/3D Object/Splines/Bender")]
